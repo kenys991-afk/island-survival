@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14231f">
+<title>荒島求生｜倖存者一男20女 V1.1</title>
+<style>
+:root{--bg:#101a18;--panel:#1b2925;--panel2:#243630;--line:#385047;--text:#edf4ef;--muted:#a8bbb0;--gold:#e7bd75;--green:#8cc5a1;--red:#e28d83}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#263d33 0,#101a18 58%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;min-height:100vh}
+header{padding:24px 18px 18px;max-width:1050px;margin:auto}
+.eyebrow{color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700}
+h1{font-size:clamp(25px,5vw,38px);line-height:1.2;margin:8px 0}
+.sub{color:var(--muted);font-size:14px}
+main{max-width:1050px;margin:auto;padding:0 14px 40px;display:grid;grid-template-columns:1fr;gap:14px}
+.panel{background:linear-gradient(145deg,rgba(35,54,47,.97),rgba(24,38,33,.97));border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 32px #0003}
+.topstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.stat{background:#101d19;border:1px solid #344b40;border-radius:12px;padding:10px}
+.stat small{display:block;color:var(--muted);font-size:11px}.stat b{font-size:18px;color:var(--gold)}
+.tabs{display:flex;gap:8px;overflow:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--text);background:#263b33}
+button:active{transform:scale(.98)}button.primary{background:var(--gold);border-color:var(--gold);color:#1d241e;font-weight:800}
+button.danger{border-color:#92584f;color:#ffc0b8;background:#442b28}
+button.ghost{background:transparent}
+button:disabled{opacity:.4;cursor:not-allowed}
+.tab.active{background:var(--gold);color:#1d241e;border-color:var(--gold);font-weight:800}
+h2{font-size:19px;margin:0 0 10px}h3{font-size:16px;margin:0 0 6px}
+.muted{color:var(--muted)}.small{font-size:12px}.story{font-size:15px;line-height:1.8;white-space:pre-line}
+.actions{display:grid;gap:9px;margin-top:14px}.actions button{text-align:left;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cast-photo{width:100%;display:block;border-radius:14px;border:1px solid var(--line);margin:10px 0 14px;max-height:440px;object-fit:cover;object-position:center}
+.person{padding:12px;border-radius:13px;border:1px solid var(--line);background:#17241f;text-align:left}
+.person b{display:block}.person span{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;border-radius:999px;padding:3px 8px;font-size:11px;background:#31483d;color:#cce5d3;margin:3px 3px 0 0}
+.pill.warn{background:#4a342b;color:#ffd1a0}.pill.bad{background:#492c2a;color:#ffc0b8}
+.bar{height:7px;background:#0e1714;border-radius:99px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:var(--green)}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.log{max-height:230px;overflow:auto;font-size:13px;line-height:1.65;color:var(--muted)}
+.notice{border-left:3px solid var(--gold);padding:9px 12px;background:#26372f;border-radius:0 10px 10px 0;font-size:13px;line-height:1.6}
+footer{text-align:center;color:#81958a;font-size:11px;padding:20px}
+input,textarea,select{width:100%;font:inherit;color:var(--text);background:#101d19;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:4px 0 10px}
+textarea{min-height:120px;resize:vertical;line-height:1.6}
+label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
+.choice-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:8px;align-items:start}
+.choice-row input{margin:0}
+.script-list{display:grid;gap:8px;margin-top:10px}
+.script-item{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#17241f;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.script-item b{font-size:14px}
+.editor-box{background:#101d19;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+@media(min-width:760px){main{grid-template-columns:1.2fr .8fr}.wide{grid-column:1/-1}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:390px){.topstats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.choice-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+ <div class="eyebrow">SURVIVAL STORY · VERSION 1.1</div>
+ <h1>荒島求生：倖存者一男20女</h1>
+ <div class="sub">選擇式文字冒險｜探索・相遇・關係・生存能力｜支援手動劇本輸入</div>
+ <div class="topstats">
+  <div class="stat"><small>生存天數</small><b id="day">第 1 天</b></div>
+  <div class="stat"><small>生命</small><b id="hp">100</b></div>
+  <div class="stat"><small>體力</small><b id="stamina">80</b></div>
+  <div class="stat"><small>已相遇女性</small><b id="met">0 / 20</b></div>
+ </div>
+</header>
+<main>
+ <section class="panel">
+  <div class="tabs">
+   <button class="tab active" data-tab="story">劇情遊戲</button>
+   <button class="tab" data-tab="people">女性圖鑑</button>
+   <button class="tab" data-tab="skills">能力狀態</button>
+   <button class="tab" data-tab="editor">劇本編輯</button>
+  </div>
+
+  <!-- 劇情遊戲 -->
+  <div id="storyTab">
+   <div class="row"><h2 id="sceneTitle">第一天・海灘甦醒</h2><span class="pill" id="sceneTag">主線劇情</span></div>
+   <p class="story" id="storyText">飛機失事後，你在陌生海灘醒來。四周散落著行李、木板與救生用品。遠處的樹林傳來呼救聲。你必須先確保自己的安全，再尋找其他倖存者。</p>
+   <div class="notice" id="hint">提示：探索會消耗體力；休息可以恢復體力。遇見女性後，可在角色選單中選擇互動路線。也可到「劇本編輯」手動輸入自訂劇情。</div>
+   <div class="actions" id="choices">
+    <button class="primary" onclick="choose('search')">① 搜尋海灘物資（體力 -8）</button>
+    <button onclick="choose('forest')">② 前往樹林查看呼救聲（體力 -12）</button>
+    <button onclick="choose('rest')">③ 原地休息（恢復體力）</button>
+   </div>
+  </div>
+
+  <!-- 女性圖鑑 -->
+  <div id="peopleTab" hidden>
+   <h2>20位女性倖存者</h2>
+   <p class="muted small">以下合照作為20位角色的共同視覺基準；點選角色查看個別狀態與互動選項。</p>
+   <img class="cast-photo" src="20位女性角色合照.png" alt="20位女性倖存者合照" onerror="this.style.display='none'">
+   <div class="grid" id="peopleGrid"></div>
+  </div>
+
+  <!-- 能力 -->
+  <div id="skillsTab" hidden>
+   <h2>生存能力</h2><div id="skillList"></div>
+  </div>
+
+  <!-- 劇本編輯（手動輸入） -->
+  <div id="editorTab" hidden>
+   <h2>劇本編輯｜手動輸入劇情</h2>
+   <p class="muted small">在這裡貼上或輸入劇情資料。儲存後可在遊戲中直接播放，包含選項與跳轉。格式對應遊戲頁面的場景標題、正文、選項按鈕。</p>
+
+   <div class="editor-box">
+    <label>場景 ID（英文或數字，唯一，例如 scene_beach_01）</label>
+    <input id="edId" placeholder="scene_custom_01" autocomplete="off">
+
+    <label>場景標題</label>
+    <input id="edTitle" placeholder="例如：第3天・岩壁強制">
+
+    <label>劇情正文（可多行）</label>
+    <textarea id="edText" placeholder="在此貼上完整劇情文字……"></textarea>
+
+    <label>標籤（選填，例如：主線／支線／強制／相遇）</label>
+    <input id="edTag" placeholder="自訂劇情" value="自訂劇情">
+
+    <label>選項（最多 6 個）｜左側＝按鈕文字，右側＝點擊後跳轉的場景 ID</label>
+    <div id="choiceEditor">
+      <div class="choice-row"><input placeholder="選項文字 ①" data-c="0"><input placeholder="跳轉場景ID 或 camp() / meet(0)" data-n="0"><button type="button" class="ghost" onclick="clearChoice(0)">清</button></div>
+      <div class="choice-row"><input placeholder="選項文字 ②" data-c="1"><input placeholder="跳轉場景ID" data-n="1"><button type="button" class="ghost" onclick="clearChoice(1)">清</button></div>
+      <div class="choice-row"><input placeholder="選項文字 ③" data-c="2"><input placeholder="跳轉場景ID" data-n="2"><button type="button" class="ghost" onclick="clearChoice(2)">清</button></div>
+      <div class="choice-row"><input placeholder="選項文字 ④" data-c="3"><input placeholder="跳轉場景ID" data-n="3"><button type="button" class="ghost" onclick="clearChoice(3)">清</button></div>
+      <div class="choice-row"><input placeholder="選項文字 ⑤" data-c="4"><input placeholder="跳轉場景ID" data-n="4"><button type="button" class="ghost" onclick="clearChoice(4)">清</button></div>
+      <div class="choice-row"><input placeholder="選項文字 ⑥" data-c="5"><input placeholder="跳轉場景ID" data-n="5"><button type="button" class="ghost" onclick="clearChoice(5)">清</button></div>
+    </div>
+
+    <div class="actions" style="margin-top:12px">
+      <button class="primary" onclick="saveScript()">儲存此劇本</button>
+      <button onclick="playScript()">儲存並立即播放</button>
+      <button class="ghost" onclick="clearEditor()">清空表單</button>
+    </div>
+   </div>
+
+   <hr>
+   <div class="row"><h3>已儲存的自訂劇本</h3>
+     <div>
+       <button class="ghost small" onclick="exportScripts()">匯出 JSON</button>
+       <button class="ghost small" onclick="document.getElementById('importFile').click()">匯入 JSON</button>
+       <input type="file" id="importFile" accept="application/json,.json" hidden onchange="importScripts(event)">
+     </div>
+   </div>
+   <div class="script-list" id="scriptList"><p class="muted small">尚無自訂劇本。儲存後會顯示在這裡。</p></div>
+
+   <hr>
+   <div class="notice">
+     <b>使用說明</b><br>
+     1. 把我給你的劇情貼到「劇情正文」。<br>
+     2. 填場景 ID、標題，並設定 1～6 個選項（右側填下一個場景 ID）。<br>
+     3. 按「儲存此劇本」或「儲存並立即播放」。<br>
+     4. 若選項要回到主線，右側可填：<code>camp()</code>、<code>meet(0)</code>、<code>choose('search')</code> 等既有指令。<br>
+     5. 可用匯出／匯入 JSON 備份整包劇本。
+   </div>
+  </div>
+ </section>
+
+ <aside class="panel">
+  <h2>男主角狀態</h2>
+  <div class="row"><span class="muted">食物</span><b id="food">3</b></div><div class="bar"><i id="foodBar" style="width:30%"></i></div>
+  <div class="row" style="margin-top:12px"><span class="muted">飲水</span><b id="water">3</b></div><div class="bar"><i id="waterBar" style="width:30%"></i></div>
+  <hr><h3>團隊狀態</h3>
+  <div class="row"><span class="muted">群體信任</span><b id="group">50</b></div><div class="bar"><i id="groupBar" style="width:50%"></i></div>
+  <p class="small muted">強制路線會降低個人好感與群體信任，並使能力成長受限。</p>
+  <hr><div class="row"><h3>事件紀錄</h3><button class="ghost small" onclick="resetGame()">重新開始</button></div>
+  <div class="log" id="log">第1天：你在海灘甦醒。</div>
+ </aside>
+
+ <section class="panel wide">
+  <h2 id="detailTitle">目前目標</h2>
+  <div class="story" id="detailText">尋找物資、確認呼救者位置，並建立安全營地。你可以自由選擇探索順序。也可到「劇本編輯」加入自訂劇情。</div>
+ </section>
+</main>
+<footer>荒島求生 V1.1｜進度與自訂劇本保存在此裝置瀏覽器</footer>
+<script>
+const women=[
+["蘇晚晴",26,"醫師","醫療、急救","高級醫療"],["陳可兒",22,"大學生","採集、植物辨識","高級採集"],["沈若蘭",29,"護理師","傷口處理、照護","急救精通"],["方雅涵",25,"工程師","建築、工具製作","建築精通"],["吳美琳",27,"廚師","烹飪、食物保存","生存料理"],
+["鄭欣怡",23,"體育教練","體能、耐力訓練","耐力強化"],["蔡雅婷",28,"警察","防衛、危機處理","危機防衛"],["林佳儀",24,"地理研究員","地形、地圖辨識","地圖探索"],["黃芸涵",26,"生物研究員","動植物辨識","生物知識"],["許子瑜",21,"潛水教練","水域探索","深水探索"],
+["張恩琦",30,"氣象研究員","天氣預測","天氣預警"],["周以芯",24,"農業技師","種植、糧食生產","農業生產"],["羅詩潔",27,"機械技師","機械維修","機械維修"],["何小柔",22,"動物照護員","動物辨識","野獸預警"],["梁芸珊",28,"登山嚮導","野外導航","高級導航"],
+["謝千語",25,"心理諮商師","壓力管理","精神調節"],["葉美華",31,"海洋研究員","海洋資源","海洋採集"],["阿琳",23,"生存教練","野外求生","極限生存"],["顧清雪",29,"考古研究員","洞穴探索、遺跡辨識","遺跡探索"],["夏知夏",26,"通訊工程師","無線電、訊號修復","通訊修復"]
+];
+
+let S={day:1,hp:100,stamina:80,food:3,water:3,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],scene:"start",log:["第1天：你在海灘甦醒。"]};
+let customScripts = {}; // id -> {id,title,text,tag,choices:[{label,next}]}
+
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem("island20save",JSON.stringify(S));localStorage.setItem("island20scripts",JSON.stringify(customScripts))}
+function load(){
+  try{let x=JSON.parse(localStorage.getItem("island20save"));if(x)S=x}catch(e){}
+  try{let y=JSON.parse(localStorage.getItem("island20scripts"));if(y)customScripts=y}catch(e){}
+}
+function note(t){S.log.unshift(`第${S.day}天：${t}`);S.log=S.log.slice(0,30)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function render(){
+ $("day").textContent="第 "+S.day+" 天";$("hp").textContent=S.hp;$("stamina").textContent=S.stamina;$("met").textContent=S.met.length+" / 20";
+ $("food").textContent=S.food;$("water").textContent=S.water;$("group").textContent=S.group;
+ $("foodBar").style.width=Math.min(100,S.food*10)+"%";$("waterBar").style.width=Math.min(100,S.water*10)+"%";$("groupBar").style.width=S.group+"%";
+ $("log").innerHTML=S.log.map(x=>"• "+esc(x)).join("<br>");
+ $("peopleGrid").innerHTML=women.map((w,i)=>`<button class="person" onclick="openPerson(${i})"><b>${String(i+1).padStart(2,"0")}｜${w[0]}</b><span>${w[1]}歲・${w[2]}</span><div>${S.met.includes(i)?'<span class="pill">已相遇</span>':'<span class="pill warn">未相遇</span>'}${S.skills.includes(i)?'<span class="pill">能力已解鎖</span>':''}</div></button>`).join("");
+ $("skillList").innerHTML=S.skills.length?S.skills.map(i=>`<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span>${women[i][0]}｜${women[i][4]}</span><span class="pill">${S.route[i]==="自願"?"完整成長":"基礎級"}</span></div>`).join(""):'<p class="muted">尚未解鎖能力。與已相遇角色互動後可取得專屬技能。</p>';
+ renderScriptList();
+ save();
+}
+
+function scene(title,text,buttons,detail="",tag="主線劇情"){
+  $("sceneTitle").textContent=title;
+  $("storyText").textContent=text;
+  $("sceneTag").textContent=tag||"主線劇情";
+  $("choices").innerHTML=buttons.map(b=>`<button class="${b[2]||""}" onclick="${b[1]}">${b[0]}</button>`).join("");
+  $("detailTitle").textContent=title;
+  $("detailText").textContent=detail||text;
+  // 切回劇情分頁
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelector('[data-tab="story"]').classList.add("active");
+  ["story","people","skills","editor"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!=="story"});
+}
+
+function choose(a){
+ if(a==="search"){S.stamina=Math.max(0,S.stamina-8);S.food++;S.water++;note("你在海灘找到食物與飲用水。");scene("海灘物資","你找到幾罐未破損的食物與瓶裝水。遠處有一名女性正在整理漂流物。",[["前往查看","meet(1)","primary"],["繼續搜尋","advance('沿著海岸搜尋，找到更多可用木材。')"],["休息","choose('rest')"]]);}
+ if(a==="forest"){S.stamina=Math.max(0,S.stamina-12);scene("樹林邊緣","你循著呼救聲找到一位受困的倖存者。她警戒地看著你，旁邊有一個急救包。",[["先詢問她是否受傷","meet(0)","primary"],["把急救包放下，保持距離","meet(2)"],["返回海灘","advance('你暫時退回海灘。')"]]);}
+ if(a==="rest"){S.stamina=Math.min(100,S.stamina+25);S.hp=Math.min(100,S.hp+5);note("休息後恢復體力。");scene("短暫休息","你找了一處背風處休息，體力恢復了一些。",[["探索附近","advance('你開始探索營地周圍。')","primary"],["尋找其他倖存者","meet(Math.min(19,S.met.length+3))"]]);}
+ render();
+}
+function advance(t){S.stamina=Math.max(0,S.stamina-5);note(t);scene("探索進行中",t,[["繼續探索並尋找倖存者","meet(Math.min(19,S.met.length))","primary"],["返回營地","camp()"]]);render()}
+function meet(i){
+ i=Math.max(0,Math.min(19,Number(i)));if(!S.met.includes(i))S.met.push(i);
+ note("遇見"+women[i][0]+"（"+women[i][2]+"）。");
+ scene("相遇｜"+women[i][0],`你遇見了${women[i][0]}。她是${women[i][1]}歲的${women[i][2]}，擅長${women[i][3]}。她目前仍在觀察你的行動。`,[[ "以尊重方式交談（好感 +8）",`interact(${i},'kind')`,"primary"],["提供物資協助（消耗1食物，好感 +12）",`interact(${i},'gift')`],["查看角色資料",`openPerson(${i})`],["返回探索","camp()"]],`專屬能力：${women[i][4]}。建立信任後可逐步解鎖更完整的能力。`);
+ render();
+}
+function interact(i,kind){
+ if(kind==="gift"&&S.food<1){scene("物資不足","目前沒有足夠食物可以分享。",[["返回","openPerson("+i+")","primary"]]);return}
+ if(kind==="gift"){S.food--;S.aff[i]+=12;S.trust[i]+=12;S.group=Math.min(100,S.group+2);note("你分享食物給"+women[i][0]+"。")}
+ else{S.aff[i]+=8;S.trust[i]+=6;S.group=Math.min(100,S.group+1);note("你尊重"+women[i][0]+"的意願並與她交談。")}
+ S.aff[i]=Math.min(100,S.aff[i]);S.trust[i]=Math.min(100,S.trust[i]);
+ scene("互動結果｜"+women[i][0],`好感度 +${kind==="gift"?12:8}。信任逐漸建立。你們約定共同整理營地。`,[["繼續培養關係",`openPerson(${i})`,"primary"],["返回營地","camp()"]]);render();
+}
+function forceRoute(i){
+ if(!confirm("確定使用強制特權？此選擇會造成嚴重且持續的關係後果，並非可逆操作。"))return;
+ S.route[i]="強制";S.aff[i]=Math.max(-100,S.aff[i]-55);S.trust[i]=Math.max(0,S.trust[i]-45);S.group=Math.max(0,S.group-12);
+ if(!S.skills.includes(i))S.skills.push(i);
+ note("你對"+women[i][0]+"使用強制特權。她拒絕再信任你，團隊氣氛惡化。");
+ scene("強制路線後果｜"+women[i][0],"事件以非露骨方式呈現：她明確拒絕這種對待，與你保持距離，並向其他倖存者求助。你立即取得她的基礎專長，但無法獲得完整成長、戀愛劇情或合作加成。後續可能觸發反抗、疏離與團隊對立事件。",[["查看角色狀態",`openPerson(${i})`,"primary"],["返回營地","camp()"]]);render();
+}
+function voluntaryUnlock(i){
+ if(S.aff[i]<35||S.trust[i]<30){scene("尚未達成條件",`需要好感度至少35、信任度至少30。目前好感${S.aff[i]}、信任${S.trust[i]}。`,[["繼續互動",`openPerson(${i})`,"primary"]]);return}
+ if(!S.skills.includes(i))S.skills.push(i);S.route[i]="自願";note(women[i][0]+"自願與你建立更深的夥伴關係，專屬能力完整解鎖。");
+ scene("能力解鎖｜"+women[i][0],`你們在互相信任與自願的前提下建立合作關係。解鎖完整專屬能力：${women[i][4]}，並可繼續發展關係。`,[["查看能力","showSkills()","primary"],["返回角色","openPerson("+i+")"]]);render();
+}
+function openPerson(i){
+ let w=women[i],met=S.met.includes(i);
+ scene("角色資料｜"+w[0],`${w[1]}歲｜${w[2]}\n專長：${w[3]}\n專屬能力：${w[4]}\n相遇狀態：${met?"已相遇":"尚未相遇"}\n好感度：${S.aff[i]}｜信任度：${S.trust[i]}\n路線：${S.route[i]}`,met?[
+ ["尊重交談（好感 +8）",`interact(${i},'kind')`,"primary"],
+ ["分享食物（好感 +12）",`interact(${i},'gift')`],
+ ["自願路線：檢查能力解鎖條件",`voluntaryUnlock(${i})`],
+ ["強制特權：立即取得基礎能力",`forceRoute(${i})`,"danger"],
+ ["返回圖鑑","showPeople()"]
+ ]:[["前往相遇","meet("+i+")","primary"],["返回圖鑑","showPeople()"]],`角色專屬能力：${w[4]}。自願路線可獲得完整能力成長；強制路線會造成關係與群體信任損失。`);
+}
+function camp(){S.day++;S.stamina=Math.min(100,S.stamina+15);if(S.food>0)S.food--;else S.hp=Math.max(0,S.hp-8);if(S.water>0)S.water--;else S.hp=Math.max(0,S.hp-10);note("返回營地，結束今天的探索。");scene("營地｜第"+S.day+"天","夜幕降臨。食物與飲水會隨時間消耗。你可以繼續探索、尋找倖存者，或培養已相遇角色的信任。",[["搜尋海灘物資","choose('search')","primary"],["前往樹林","choose('forest')"],["查看女性圖鑑","showPeople()"],["休息","choose('rest')"],["播放自訂劇本","showEditor()"]]);render()}
+function showPeople(){document.querySelector('[data-tab="people"]').click()}
+function showSkills(){document.querySelector('[data-tab="skills"]').click()}
+function showEditor(){document.querySelector('[data-tab="editor"]').click()}
+
+/* ===== 劇本編輯系統 ===== */
+function clearChoice(i){
+  const rows=document.querySelectorAll("#choiceEditor .choice-row");
+  if(rows[i]){rows[i].querySelectorAll("input").forEach(inp=>inp.value="")}
+}
+function clearEditor(){
+  $("edId").value="";$("edTitle").value="";$("edText").value="";$("edTag").value="自訂劇情";
+  document.querySelectorAll("#choiceEditor input").forEach(i=>i.value="");
+}
+function readEditorChoices(){
+  const rows=document.querySelectorAll("#choiceEditor .choice-row");
+  const out=[];
+  rows.forEach(row=>{
+    const label=row.querySelector('[data-c]')?.value?.trim();
+    const next=row.querySelector('[data-n]')?.value?.trim();
+    if(label) out.push({label, next: next||"camp()"});
+  });
+  return out;
+}
+function saveScript(){
+  const id=($("edId").value||"").trim();
+  const title=($("edTitle").value||"").trim();
+  const text=($("edText").value||"").trim();
+  const tag=($("edTag").value||"自訂劇情").trim();
+  if(!id){alert("請填寫場景 ID");return null}
+  if(!title){alert("請填寫場景標題");return null}
+  if(!text){alert("請填寫劇情正文");return null}
+  const choices=readEditorChoices();
+  if(!choices.length){alert("請至少填一個選項");return null}
+  customScripts[id]={id,title,text,tag,choices};
+  save();
+  renderScriptList();
+  alert("已儲存劇本："+id);
+  return id;
+}
+function playScript(id){
+  if(!id) id=saveScript();
+  if(!id) return;
+  const sc=customScripts[id];
+  if(!sc){alert("找不到劇本");return}
+  // 把 choices 轉成 scene() 需要的 [label, onclick, class]
+  const buttons=sc.choices.map((c,idx)=>{
+    let fn=c.next;
+    // 若是純場景ID（自訂），改成 playCustom('id')
+    if(fn && !fn.includes("(") && !fn.includes(")")){
+      fn=`playCustom('${fn}')`;
+    }
+    return [c.label, fn, idx===0?"primary":""];
+  });
+  scene(sc.title, sc.text, buttons, "自訂劇本｜"+sc.id, sc.tag||"自訂劇情");
+  note("播放自訂劇本："+sc.title);
+  render();
+}
+function playCustom(id){
+  if(!customScripts[id]){
+    scene("劇本不存在","找不到場景 ID："+id+"。請回劇本編輯檢查。",[["回營地","camp()","primary"],["打開編輯器","showEditor()"]]);
+    return;
+  }
+  playScript(id);
+}
+function deleteScript(id){
+  if(!confirm("刪除劇本 "+id+"？"))return;
+  delete customScripts[id];
+  save();
+  renderScriptList();
+}
+function loadScriptToEditor(id){
+  const sc=customScripts[id];
+  if(!sc)return;
+  $("edId").value=sc.id;
+  $("edTitle").value=sc.title;
+  $("edText").value=sc.text;
+  $("edTag").value=sc.tag||"自訂劇情";
+  document.querySelectorAll("#choiceEditor input").forEach(i=>i.value="");
+  sc.choices.forEach((c,i)=>{
+    const row=document.querySelectorAll("#choiceEditor .choice-row")[i];
+    if(row){
+      row.querySelector('[data-c]').value=c.label;
+      row.querySelector('[data-n]').value=c.next;
+    }
+  });
+  showEditor();
+}
+function renderScriptList(){
+  const el=$("scriptList");
+  if(!el)return;
+  const keys=Object.keys(customScripts);
+  if(!keys.length){el.innerHTML='<p class="muted small">尚無自訂劇本。儲存後會顯示在這裡。</p>';return}
+  el.innerHTML=keys.map(id=>{
+    const sc=customScripts[id];
+    return `<div class="script-item">
+      <div><b>${esc(sc.title)}</b><br><span class="small muted">ID: ${esc(id)}｜選項 ${sc.choices.length} 個</span></div>
+      <div>
+        <button class="primary small" onclick="playCustom('${id}')">播放</button>
+        <button class="ghost small" onclick="loadScriptToEditor('${id}')">編輯</button>
+        <button class="danger small" onclick="deleteScript('${id}')">刪</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+function exportScripts(){
+  const blob=new Blob([JSON.stringify(customScripts,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="island_scripts.json";
+  a.click();
+}
+function importScripts(ev){
+  const file=ev.target.files?.[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      customScripts=Object.assign(customScripts,data);
+      save();
+      renderScriptList();
+      alert("匯入完成，共 "+Object.keys(data).length+" 筆");
+    }catch(e){alert("JSON 格式錯誤")}
+  };
+  reader.readAsText(file);
+  ev.target.value="";
+}
+
+function resetGame(){
+  if(!confirm("確定清除本機進度並重新開始？（自訂劇本不會刪除）"))return;
+  localStorage.removeItem("island20save");
+  S={day:1,hp:100,stamina:80,food:3,water:3,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],scene:"start",log:["第1天：你在海灘甦醒。"]};
+  scene("第一天・海灘甦醒","飛機失事後，你在陌生海灘醒來。四周散落著行李、木板與救生用品。遠處的樹林傳來呼救聲。你必須先確保自己的安全，再尋找其他倖存者。",[["① 搜尋海灘物資（體力 -8）","choose('search')","primary"],["② 前往樹林查看呼救聲（體力 -12）","choose('forest')"],["③ 原地休息","choose('rest')"]]);
+  render();
+}
+
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  ["story","people","skills","editor"].forEach(t=>{
+    const el=$(t+"Tab");
+    if(el) el.hidden = t!==b.dataset.tab;
+  });
+  if(b.dataset.tab==="editor") renderScriptList();
+}));
+
+load();render();
+</script>
+</body></html>
