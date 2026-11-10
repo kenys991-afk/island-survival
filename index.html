@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14231f">
-<title>荒島求生｜倖存者一男20女 V1.1</title>
+<title>荒島求生｜倖存者一男20女 V1.2</title>
 <style>
 :root{--bg:#101a18;--panel:#1b2925;--panel2:#243630;--line:#385047;--text:#edf4ef;--muted:#a8bbb0;--gold:#e7bd75;--green:#8cc5a1;--red:#e28d83}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#263d33 0,#101a18 58%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;min-height:100vh}
@@ -54,7 +54,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
 </head>
 <body>
 <header>
- <div class="eyebrow">SURVIVAL STORY · VERSION 1.1</div>
+ <div class="eyebrow">SURVIVAL STORY · VERSION 1.2</div>
  <h1>荒島求生：倖存者一男20女</h1>
  <div class="sub">選擇式文字冒險｜探索・相遇・關係・生存能力｜支援手動劇本輸入</div>
  <div class="topstats">
@@ -68,7 +68,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
  <section class="panel">
   <div class="tabs">
    <button class="tab active" data-tab="story">劇情遊戲</button>
-   <button class="tab" data-tab="people">女性圖鑑</button>
+   <button class="tab" data-tab="people">團隊合作</button>
    <button class="tab" data-tab="skills">能力狀態</button>
    <button class="tab" data-tab="editor">劇本編輯</button>
   </div>
@@ -77,7 +77,8 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
   <div id="storyTab">
    <div class="row"><h2 id="sceneTitle">第一天・海灘甦醒</h2><span class="pill" id="sceneTag">主線劇情</span></div>
    <p class="story" id="storyText">飛機失事後，你在陌生海灘醒來。四周散落著行李、木板與救生用品。遠處的樹林傳來呼救聲。你必須先確保自己的安全，再尋找其他倖存者。</p>
-   <div class="notice" id="hint">提示：探索會消耗體力；休息可以恢復體力。遇見女性後，可在角色選單中選擇互動路線。也可到「劇本編輯」手動輸入自訂劇情。</div>
+   <div class="notice" id="hint" style="display:none"></div>
+   <div class="notice" id="taskBox"><b>今日必做任務</b><br><span id="taskText">1. 取得食物或飲水　2. 確認夜間遮蔽　3. 分配收留者任務（若有）</span></div>
    <div class="actions" id="choices">
     <button class="primary" onclick="choose('search')">① 搜尋海灘物資（體力 -8）</button>
     <button onclick="choose('forest')">② 前往樹林查看呼救聲（體力 -12）</button>
@@ -87,9 +88,9 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
 
   <!-- 女性圖鑑 -->
   <div id="peopleTab" hidden>
-   <h2>20位女性倖存者</h2>
-   <p class="muted small">以下合照作為20位角色的共同視覺基準；點選角色查看個別狀態與互動選項。</p>
-   <img class="cast-photo" src="20位女性角色合照.png" alt="20位女性倖存者合照" onerror="this.style.display='none'">
+   <h2>團隊合作</h2>
+   <p class="muted small">點選成員查看狀態、入隊／單獨收留、每日任務。收留者未完成每日任務必須離開。女性在採集與負重上較吃力，需分工或支援。</p>
+   <img class="cast-photo" src="20位女性合角色照.png" alt="20位女性倖存者合照" onerror="this.style.display='none'">
    <div class="grid" id="peopleGrid"></div>
   </div>
 
@@ -157,8 +158,11 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
 
  <aside class="panel">
   <h2>男主角狀態</h2>
-  <div class="row"><span class="muted">食物</span><b id="food">3</b></div><div class="bar"><i id="foodBar" style="width:30%"></i></div>
+  <div class="row"><span class="muted">飢餓</span><b id="hunger">20</b></div><div class="bar"><i id="hungerBar" style="width:20%"></i></div>
+  <div class="row" style="margin-top:12px"><span class="muted">食物</span><b id="food">3</b></div><div class="bar"><i id="foodBar" style="width:30%"></i></div>
   <div class="row" style="margin-top:12px"><span class="muted">飲水</span><b id="water">3</b></div><div class="bar"><i id="waterBar" style="width:30%"></i></div>
+  <div class="row" style="margin-top:12px"><span class="muted">住所</span><b id="shelterStat">簡陋</b></div>
+  <div class="row" style="margin-top:8px"><span class="muted">衣物</span><b id="clothesStat">破損</b></div>
   <hr><h3>團隊狀態</h3>
   <div class="row"><span class="muted">群體信任</span><b id="group">50</b></div><div class="bar"><i id="groupBar" style="width:50%"></i></div>
   <p class="small muted">強制路線會降低個人好感與群體信任，並使能力成長受限。</p>
@@ -168,10 +172,10 @@ label{font-size:13px;color:var(--muted);display:block;margin-top:6px}
 
  <section class="panel wide">
   <h2 id="detailTitle">目前目標</h2>
-  <div class="story" id="detailText">尋找物資、確認呼救者位置，並建立安全營地。你可以自由選擇探索順序。也可到「劇本編輯」加入自訂劇情。</div>
+  <div class="story" id="detailText">必做：取得食物或水；建立可過夜遮蔽；若有收留成員則指派並確認每日任務。</div>
  </section>
 </main>
-<footer>荒島求生 V1.1｜進度與自訂劇本保存在此裝置瀏覽器</footer>
+<footer>荒島求生 V1.2｜進度與自訂劇本保存在此裝置瀏覽器</footer>
 <script>
 const women=[
 ["蘇晚晴",26,"醫師","醫療、急救","高級醫療"],["陳可兒",22,"大學生","採集、植物辨識","高級採集"],["沈若蘭",29,"護理師","傷口處理、照護","急救精通"],["方雅涵",25,"工程師","建築、工具製作","建築精通"],["吳美琳",27,"廚師","烹飪、食物保存","生存料理"],
@@ -180,7 +184,7 @@ const women=[
 ["謝千語",25,"心理諮商師","壓力管理","精神調節"],["葉美華",31,"海洋研究員","海洋資源","海洋採集"],["阿琳",23,"生存教練","野外求生","極限生存"],["顧清雪",29,"考古研究員","洞穴探索、遺跡辨識","遺跡探索"],["夏知夏",26,"通訊工程師","無線電、訊號修復","通訊修復"]
 ];
 
-let S={day:1,hp:100,stamina:80,food:3,water:3,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],scene:"start",log:["第1天：你在海灘甦醒。"]};
+let S={day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],team:[],dailyTask:{},scene:"start",log:["第1天：你在海灘甦醒。"]};
 let customScripts = {}; // id -> {id,title,text,tag,choices:[{label,next}]}
 
 const $=id=>document.getElementById(id);
@@ -195,6 +199,9 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",
 function render(){
  $("day").textContent="第 "+S.day+" 天";$("hp").textContent=S.hp;$("stamina").textContent=S.stamina;$("met").textContent=S.met.length+" / 20";
  $("food").textContent=S.food;$("water").textContent=S.water;$("group").textContent=S.group;
+ if($("hunger")){$("hunger").textContent=S.hunger||0;if($("hungerBar"))$("hungerBar").style.width=Math.min(100,S.hunger)+"%";}
+ if($("shelterStat"))$("shelterStat").textContent=["無","簡陋","可用","穩固"][Math.min(3,S.shelter||1)];
+ if($("clothesStat"))$("clothesStat").textContent=["近裸","破損","普通","完整"][Math.min(3,S.clothes||1)];
  $("foodBar").style.width=Math.min(100,S.food*10)+"%";$("waterBar").style.width=Math.min(100,S.water*10)+"%";$("groupBar").style.width=S.group+"%";
  $("log").innerHTML=S.log.map(x=>"• "+esc(x)).join("<br>");
  $("peopleGrid").innerHTML=women.map((w,i)=>`<button class="person" onclick="openPerson(${i})"><b>${String(i+1).padStart(2,"0")}｜${w[0]}</b><span>${w[1]}歲・${w[2]}</span><div>${S.met.includes(i)?'<span class="pill">已相遇</span>':'<span class="pill warn">未相遇</span>'}${S.skills.includes(i)?'<span class="pill">能力已解鎖</span>':''}</div></button>`).join("");
@@ -208,8 +215,9 @@ function scene(title,text,buttons,detail="",tag="主線劇情"){
   $("storyText").textContent=text;
   $("sceneTag").textContent=tag||"主線劇情";
   $("choices").innerHTML=buttons.map(b=>`<button class="${b[2]||""}" onclick="${b[1]}">${b[0]}</button>`).join("");
-  $("detailTitle").textContent=title;
-  $("detailText").textContent=detail||text;
+  $("detailTitle").textContent="目前目標";
+  $("detailText").textContent=detail||("進度："+title+"。完成今日必做任務以推進。");
+  if($("taskText") && !detail){/* keep tasks */}
   // 切回劇情分頁
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   document.querySelector('[data-tab="story"]').classList.add("active");
@@ -390,7 +398,7 @@ function importScripts(ev){
 function resetGame(){
   if(!confirm("確定清除本機進度並重新開始？（自訂劇本不會刪除）"))return;
   localStorage.removeItem("island20save");
-  S={day:1,hp:100,stamina:80,food:3,water:3,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],scene:"start",log:["第1天：你在海灘甦醒。"]};
+  S={day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,group:50,met:[],aff:Array(20).fill(0),trust:Array(20).fill(40),route:Array(20).fill("未選擇"),skills:[],team:[],dailyTask:{},scene:"start",log:["第1天：你在海灘甦醒。"]};
   scene("第一天・海灘甦醒","飛機失事後，你在陌生海灘醒來。四周散落著行李、木板與救生用品。遠處的樹林傳來呼救聲。你必須先確保自己的安全，再尋找其他倖存者。",[["① 搜尋海灘物資（體力 -8）","choose('search')","primary"],["② 前往樹林查看呼救聲（體力 -12）","choose('forest')"],["③ 原地休息","choose('rest')"]]);
   render();
 }
