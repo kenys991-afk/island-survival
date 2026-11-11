@@ -66,6 +66,7 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
   <button class="tab" data-tab="camp">營區培養</button>
   <button class="tab" data-tab="map">全島地圖</button>
   <button class="tab" data-tab="skills">能力</button>
+  <button class="tab" data-tab="hero">主角</button>
  </div>
 
  <div id="storyTab">
@@ -105,7 +106,21 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
   <div class="actions" id="mapActions"></div>
  </div>
 
- <div id="skillsTab" hidden>
+ 
+  <div id="heroTab" hidden>
+   <h2>男主角能力</h2>
+   <p class="muted small">訓練消耗體力；每日訓練次數有上限。性技巧影響親密好感收益與場景描述。</p>
+   <div class="camp-grid" id="heroStats"></div>
+   <hr>
+   <h3>性技巧分科</h3>
+   <div id="heroSexSubs" class="small muted"></div>
+   <hr>
+   <h3>今日可訓練</h3>
+   <div class="actions" id="heroTrainActions"></div>
+   <p class="small muted" id="heroTrainHint"></p>
+  </div>
+
+  <div id="skillsTab" hidden>
   <h2>生存能力</h2>
   <div id="skillList"></div>
  </div>
@@ -120,6 +135,12 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
  <div class="row" style="margin-top:6px"><span class="muted">衣物</span><b id="clothesStat">破損</b></div>
  <div class="row" style="margin-top:6px"><span class="muted">群體信任</span><b id="group">50</b></div><div class="bar"><i id="groupBar" style="width:50%"></i></div>
  <div class="row" style="margin-top:6px"><span class="muted">收留</span><b id="teamCount">0</b></div>
+  <hr><h3>主角能力</h3>
+  <div class="row"><span class="muted">力量</span><b id="statStr">10</b></div>
+  <div class="row" style="margin-top:4px"><span class="muted">魅力</span><b id="statCharm">10</b></div>
+  <div class="row" style="margin-top:4px"><span class="muted">性技巧</span><b id="statSex">10</b></div>
+  <div class="row" style="margin-top:4px"><span class="muted">領導力</span><b id="statLead">10</b></div>
+  <div class="small muted" id="trainTodayHint" style="margin-top:4px">今日訓練 0/2</div>
  <hr>
  <div class="small muted" id="autoSaveHint" style="margin-bottom:8px">進入遊戲後會自動存檔</div>
  <div class="row"><h3>紀錄</h3><span style="display:flex;gap:4px;flex-wrap:wrap">
@@ -152,7 +173,7 @@ const SHELTER_LV=["無","簡陋棚","可用屋","穩固屋"];const CLOTHES_LV=["
 
 let S={
  day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,fire:1,store:0,def:0,farm:0,group:50,
- zone:0,met:[],aff:Array(20).fill(0),trust:Array(20).fill(30),route:Array(20).fill("未選"),
+ zone:0,str:10,charm:10,sex:10,lead:10,trainCount:{str:0,charm:0,sex:0,lead:0},sexSub:{pace:0,fore:0,end:0},trainToday:0,met:[],aff:Array(20).fill(0),trust:Array(20).fill(30),route:Array(20).fill("未選"),
  skills:[],team:[],pendingTask:{},taskDone:{},groupOf:Array(20).fill("none"),
  campAssign:{},favorGainToday:Array(20).fill(0),flags:{},log:["第1天：墜機海岸，倖存者陸續出現。"]
 };
@@ -173,7 +194,7 @@ function save(){
 }
 function normalizeSave(x){
   if(!x||typeof x!=="object")return null;
-  const base={day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,fire:1,store:0,def:0,farm:0,group:50,zone:0,met:[],aff:Array(20).fill(0),trust:Array(20).fill(30),route:Array(20).fill("未選"),skills:[],team:[],pendingTask:{},taskDone:{},groupOf:Array(20).fill("none"),campAssign:{},favorGainToday:Array(20).fill(0),flags:{},log:[]};
+  const base={day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,fire:1,store:0,def:0,farm:0,group:50,zone:0,str:10,charm:10,sex:10,lead:10,trainCount:{str:0,charm:0,sex:0,lead:0},sexSub:{pace:0,fore:0,end:0},trainToday:0,met:[],aff:Array(20).fill(0),trust:Array(20).fill(30),route:Array(20).fill("未選"),skills:[],team:[],pendingTask:{},taskDone:{},groupOf:Array(20).fill("none"),campAssign:{},favorGainToday:Array(20).fill(0),flags:{},log:[]};
   const out=Object.assign({},base,x);
   ["aff","trust","route","groupOf","favorGainToday"].forEach(k=>{
     if(!Array.isArray(out[k])||out[k].length<20){
@@ -240,9 +261,10 @@ function importSave(){
 
 function note(t){S.log.unshift("第"+S.day+"天："+t);S.log=S.log.slice(0,50)}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
-function addFavor(i,n){
+function addFavor(i,n,fromSex){
  const left=Math.max(0,12-(S.favorGainToday[i]||0));
- const gain=Math.min(left,n);
+ let nn=n+(fromSex? (typeof sexFavorBonus==="function"?sexFavorBonus():0):0);
+ const gain=Math.min(left,nn);
  if(gain<=0){note(women[i][0]+"今日好感已達上限。");return 0}
  S.aff[i]=Math.min(100,S.aff[i]+gain);S.favorGainToday[i]=(S.favorGainToday[i]||0)+gain;return gain;
 }
@@ -255,6 +277,9 @@ function render(){
  $("hunger").textContent=S.hunger;$("hungerBar").style.width=Math.min(100,S.hunger)+"%";
  $("food").textContent=S.food;$("water").textContent=S.water;$("group").textContent=S.group;
  $("groupBar").style.width=S.group+"%";$("teamCount").textContent=S.team.length;
+ if($("statStr")){$("statStr").textContent=S.str|0;$("statCharm").textContent=S.charm|0;$("statSex").textContent=S.sex|0;$("statLead").textContent=S.lead|0;}
+ if($("trainTodayHint"))$("trainTodayHint").textContent="今日訓練 "+(S.trainToday||0)+"/2";
+ if(typeof renderHero==="function") renderHero();
  $("shelterStat").textContent=SHELTER_LV[Math.min(3,S.shelter)];$("clothesStat").textContent=CLOTHES_LV[Math.min(3,S.clothes)];
  $("log").innerHTML=S.log.map(x=>"• "+esc(x)).join("<br>");
  renderPeople();renderGroups();renderCamp();renderMap();renderSkills();
@@ -316,7 +341,7 @@ function scene(title,text,buttons,tag="主線",detail){
  if(detail)$("detailText").textContent=detail;
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
  document.querySelector('[data-tab="story"]').classList.add("active");
- ["story","people","camp","map","skills"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!=="story"});
+ ["story","people","camp","map","skills","hero"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!=="story"});
  render();
 }
 
@@ -332,7 +357,7 @@ function returnCamp(){
     ["下一天","nextDay"],
     ["團隊合作／任務","openPeople()"],
     ["營區培養","openCamp()"],
-    ["全島地圖","openMap()"],
+    ["全島地圖","openMap()"],["主角訓練","openHero()"],
     ["與已相遇者對話（選人）","openPeople()"]
   ],
   "營區",
@@ -420,7 +445,7 @@ function d1_camp(){
 更深的林帶、高地、洞穴都還在黑裡。你決定依序往全島推進，不一天走完。
 
 若要發展關係，必須符合當下場景——例如海岸夜、林緣、岩壁，而不是憑空跳轉。`,
-[["進入第2天","day2","primary"],["團隊合作","openPeople()"],["全島地圖","openMap()"]],"生存");
+[["下午：體能訓練","trainHero('str')"],["下午：魅力練習","trainHero('charm')"],["進入第2天","day2","primary"],["團隊合作","openPeople()"],["全島地圖","openMap()"]],"生存");
 }
 function talk_su_beach(){
  meet(0);const g=addFavor(0,6);S.trust[0]=Math.min(100,S.trust[0]+4);
@@ -435,7 +460,7 @@ function talk_su_beach(){
 }
 function sex_su_full(){
  if(S.aff[0]<20){scene("意願不足","她後退一步：「現在不是時候。」",[["回營","d1_camp"]]);return}
- S.route[0]="自願";addFavor(0,8);S.trust[0]=Math.min(100,S.trust[0]+10);if(!S.skills.includes(0))S.skills.push(0);costSta(16);
+ S.route[0]="自願";addFavor(0,8,true);S.trust[0]=Math.min(100,S.trust[0]+10);if(!S.skills.includes(0))S.skills.push(0);costSta(16);
  scene("自願｜海岸沙地・蘇晚晴",
 `場景：營火照不到的沙丘後側，海風帶著鹽味。
 
@@ -464,7 +489,7 @@ function force_su_full(){
 
 function sex_ruolan_full(){
  meet(2); if(S.aff[2]<18){scene("意願不足","沈若蘭搖頭：「傷患還等著。別鬧。」",[["返回","openPerson(2)"]]);return;}
- S.route[2]="自願"; addFavor(2,8); S.trust[2]=Math.min(100,S.trust[2]+12); if(!S.skills.includes(2))S.skills.push(2); costSta(16);
+ S.route[2]="自願"; addFavor(2,8,true); S.trust[2]=Math.min(100,S.trust[2]+12); if(!S.skills.includes(2))S.skills.push(2); costSta(16);
  scene("自願｜傷患區外帳篷縫・沈若蘭",
 `場景：臨時傷患區外緣，布與樹枝隔出的窄縫。裡面有人淺眠，只能極小聲。
 
@@ -496,7 +521,7 @@ function force_ruolan_full(){
 }
 function sex_meilin_full(){
  meet(4); if(S.aff[4]<18){scene("意願不足","吳美琳把鍋勺放好：「先讓大家都吃上熱的。」",[["返回","openPerson(4)"]]);return;}
- S.route[4]="自願"; addFavor(4,8); S.trust[4]=Math.min(100,S.trust[4]+10); if(!S.skills.includes(4))S.skills.push(4); costSta(15);
+ S.route[4]="自願"; addFavor(4,8,true); S.trust[4]=Math.min(100,S.trust[4]+10); if(!S.skills.includes(4))S.skills.push(4); costSta(15);
  scene("自願｜灶火余烬旁・吳美琳",
 `場景：主營灶火只剩紅炭。鍋已洗淨，油煙味還在。夜深，輪值在另一頭。
 
@@ -528,7 +553,7 @@ function force_meilin_full(){
 }
 function sex_xinyi_full(){
  meet(5); if(S.aff[5]<18){scene("意願不足","鄭欣怡甩甩手腕：「體力留給明天搬運。」",[["返回","openPerson(5)"]]);return;}
- S.route[5]="自願"; addFavor(5,8); S.trust[5]=Math.min(100,S.trust[5]+10); if(!S.skills.includes(5))S.skills.push(5); costSta(17);
+ S.route[5]="自願"; addFavor(5,8,true); S.trust[5]=Math.min(100,S.trust[5]+10); if(!S.skills.includes(5))S.skills.push(5); costSta(17);
  scene("自願｜海岸訓練空地邊緣・鄭欣怡",
 `場景：白天體能空地外側，草被踩倒一片。夜風比營火旁更涼。
 
@@ -561,6 +586,7 @@ function force_xinyi_full(){
 
 
 function day2(){
+ S.trainToday=0;
  S.day=2;S.favorGainToday=Array(20).fill(0);S.hunger=Math.min(100,S.hunger+12);S.stamina=Math.min(100,S.stamina+18);
  if(S.food>0)S.food--;if(S.water>0)S.water--;
  S.zone=Math.max(S.zone,1);meet(9,16);setGroup("forage",1,4,16);note("第2天，開放潮間礁石。");
@@ -570,7 +596,7 @@ function day2(){
 許子瑜與葉美華下場示範避溝；採集組掛上「待完成」的拾貝任務——可以今晚做，也可以明天做。
 
 警戒組輪值岸線。沒有人被要求必須做完才准睡。`,
-[["探查礁石採食","d2_reef","primary"],["回營分配待辦任務","openPeople()"],["推進到第3天","day3"]],
+[["早上：性技巧自我練習","trainHero('sex')"],["探查礁石採食","d2_reef","primary"],["回營分配待辦任務","openPeople()"],["推進到第3天","day3"]],
 "探查");
 }
 function d2_reef(){
@@ -584,6 +610,7 @@ function d2_reef(){
 
 /* ===== 第3～7天交替 ===== */
 function day3(){
+ S.trainToday=0;
  S.day=3;S.favorGainToday=Array(20).fill(0);S.zone=Math.max(S.zone,2);meet(3,14,13);setGroup("scout",3,14);setGroup("guard",6,13);
  S.hunger=Math.min(100,S.hunger+10);S.stamina=Math.min(100,S.stamina+15);if(S.food>0)S.food--;note("第3天稀疏林帶。");
  scene("第3天・稀疏林帶",
@@ -635,6 +662,7 @@ function d3_meilin(){
 }
 
 function day4(){
+ S.trainToday=0;
  S.day=4;S.favorGainToday=Array(20).fill(0);S.zone=Math.max(S.zone,3);meet(11,8,1);setGroup("forage",1,8,11);
  S.stamina=Math.min(100,S.stamina+15);S.hunger=Math.min(100,S.hunger+10);if(S.food>0)S.food--;note("第4天雨林邊緣。");
  scene("第4天・濃密雨林邊緣",
@@ -656,6 +684,7 @@ function d4_shelter2(){
 }
 
 function day5(){
+ S.trainToday=0;
  S.day=5;S.favorGainToday=Array(20).fill(0);S.zone=Math.max(S.zone,4);meet(5,6,10,7);setGroup("guard",6,5);setGroup("scout",7,10);
  S.stamina=Math.min(100,S.stamina+12);note("第5天中央高地。");
  scene("第5天・中央高地",
@@ -701,6 +730,7 @@ function force_yating_high(){
 }
 
 function day6(){
+ S.trainToday=0;
  S.day=6;S.favorGainToday=Array(20).fill(0);S.zone=Math.max(S.zone,6);meet(9,16,19);setGroup("forage",9,16);
  S.stamina=Math.min(100,S.stamina+12);note("第6天潟湖。");
  scene("第6天・東側潟湖",
@@ -725,7 +755,7 @@ function d6_yuzi(){
 function d6_task(){if(!S.team.includes(9))S.team.push(9);S.pendingTask[9]="水性訓練（待完成）";scene("已掛待辦","她點頭游回岸。",[["第7天","day7","primary"]])}
 function sex_yuzi_lagoon(){
  if(S.aff[9]<28){scene("她笑著後退","「再熟一點再說。」",[["第7天","day7"]]);return}
- S.route[9]="自願";addFavor(9,8);if(!S.skills.includes(9))S.skills.push(9);costSta(15);
+ S.route[9]="自願";addFavor(9,8,true);if(!S.skills.includes(9))S.skills.push(9);costSta(15);
  scene("自願｜潟湖淺灘・許子瑜",
 `場景：夕陽淺灘，水波到腰。
 
@@ -749,6 +779,7 @@ function force_yuzi_lagoon(){
 }
 
 function day7(){
+ S.trainToday=0;
  S.day=7;S.favorGainToday=Array(20).fill(0);S.zone=Math.max(S.zone,7);meet(18,17,15,12);setGroup("scout",18,17);setGroup("medical",0,2,15);
  S.stamina=Math.min(100,S.stamina+12);note("第7天北部洞穴。");
  scene("第7天・北部洞穴外",
@@ -799,6 +830,7 @@ function day8(){
 "主線");
 }
 function nextDay(){
+ S.trainToday=0;
  S.day++;S.favorGainToday=Array(20).fill(0);S.hunger=Math.min(100,S.hunger+12);S.stamina=Math.min(100,S.stamina+15);
  if(S.food>0)S.food--;else S.hp=Math.max(0,S.hp-6);
  if(S.water>0)S.water--;else S.hp=Math.max(0,S.hp-8);
@@ -879,11 +911,84 @@ function frc(i){
  scene("強制｜"+women[i][0],`場景依目前探查區。強烈反抗、拉扯衣服、痛喘咒罵；插入後忽深忽淺。事後關係崩壞。`,[["返回",`openPerson(${i})`]],"強制");
 }
 
+
+function ensureHeroStats(){
+  if(S.str==null)S.str=10; if(S.charm==null)S.charm=10; if(S.sex==null)S.sex=10; if(S.lead==null)S.lead=10;
+  if(!S.trainCount)S.trainCount={str:0,charm:0,sex:0,lead:0};
+  if(!S.sexSub)S.sexSub={pace:0,fore:0,end:0};
+  if(S.trainToday==null)S.trainToday=0;
+}
+function sexFavorBonus(){
+  ensureHeroStats();
+  // 性技巧 10 起，每多 5 點親密好感 +1（上限 +6）
+  return Math.min(6, Math.floor(Math.max(0,(S.sex||10)-10)/5));
+}
+function renderHero(){
+  ensureHeroStats();
+  const el=$("heroStats"); if(!el)return;
+  const rows=[
+    ["力量",S.str,"影響負重、加固住所、部分強制成功率敘述"],
+    ["魅力",S.charm,"影響對話選項與部分自願門檻微調"],
+    ["性技巧",S.sex,"影響親密好感收益與場景細節"],
+    ["領導力",S.lead,"影響小組效率與群體信任恢復"]
+  ];
+  el.innerHTML=rows.map(([n,v,d])=>`<div class="camp-card"><b>${n} ${v}</b><div class="small muted">訓練 ${S.trainCount[{力量:"str",魅力:"charm",性技巧:"sex",領導力:"lead"}[n]]||0} 次<br>${d}</div></div>`).join("");
+  const ss=$("heroSexSubs");
+  if(ss) ss.innerHTML=`節奏控制 ${S.sexSub.pace||0}　前戲技巧 ${S.sexSub.fore||0}　持久力 ${S.sexSub.end||0}`;
+  const hint=$("heroTrainHint");
+  if(hint) hint.textContent=`今日已訓練 ${S.trainToday||0}/2 次。第1天偏體能／魅力，第2天起可練性技巧與領導。`;
+  const act=$("heroTrainActions");
+  if(!act)return;
+  const left=2-(S.trainToday||0);
+  if(left<=0){act.innerHTML='<p class="muted small">今日訓練已達上限，明天再來。</p>';return;}
+  const btns=[];
+  btns.push(["體能訓練（力量+2～4・體力-12）","trainHero('str')","primary"]);
+  btns.push(["魅力練習（魅力+2～4・體力-10）","trainHero('charm')"]);
+  if(S.day>=2) btns.push(["性技巧自我練習（性技巧+2～4・體力-10）","trainHero('sex')"]);
+  if(S.day>=2) btns.push(["領導演說／組訓（領導+2～3・體力-10）","trainHero('lead')"]);
+  if(S.day>=2) btns.push(["分科：節奏控制（體力-8）","trainSexSub('pace')"]);
+  if(S.day>=2) btns.push(["分科：前戲技巧（體力-8）","trainSexSub('fore')"]);
+  if(S.day>=3) btns.push(["分科：持久力（體力-10）","trainSexSub('end')"]);
+  act.innerHTML=btns.map((b,i)=>`<button type="button" class="${b[2]||''}" data-act="${b[1]}">${b[0]}</button>`).join("");
+}
+function trainHero(type){
+  ensureHeroStats();
+  if((S.trainToday||0)>=2){alert("今日訓練已達上限（2次）");return}
+  const cost={str:12,charm:10,sex:10,lead:10}[type]||10;
+  if(S.stamina<cost){alert("體力不足");return}
+  S.stamina-=cost; S.trainToday=(S.trainToday||0)+1;
+  let gain=2+Math.floor(Math.random()*3);
+  if(type==="lead") gain=2+Math.floor(Math.random()*2);
+  S[type]=(S[type]||10)+gain;
+  S.trainCount[type]=(S.trainCount[type]||0)+1;
+  note("訓練"+{str:"力量",charm:"魅力",sex:"性技巧",lead:"領導力"}[type]+" +"+gain);
+  // 力量訓練順便有機會微加住所相關敘述觸發
+  if(type==="str"&&S.shelter<3&&Math.random()<0.15){S.shelter++;note("訓練後順手加固了住所。");}
+  if(type==="lead"){S.group=Math.min(100,S.group+1);}
+  render(); renderHero();
+  alert({str:"力量",charm:"魅力",sex:"性技巧",lead:"領導力"}[type]+" +"+gain+"\n今日訓練 "+S.trainToday+"/2");
+}
+function trainSexSub(sub){
+  ensureHeroStats();
+  if((S.trainToday||0)>=2){alert("今日訓練已達上限");return}
+  const cost=sub==="end"?10:8;
+  if(S.stamina<cost){alert("體力不足");return}
+  S.stamina-=cost; S.trainToday=(S.trainToday||0)+1;
+  S.sexSub[sub]=(S.sexSub[sub]||0)+1;
+  S.sex=(S.sex||10)+1;
+  S.trainCount.sex=(S.trainCount.sex||0)+1;
+  const names={pace:"節奏控制",fore:"前戲技巧",end:"持久力"};
+  note("性技巧分科："+names[sub]+" +1");
+  render(); renderHero();
+  alert(names[sub]+"提升，性技巧 +1");
+}
+function openHero(){document.querySelector('[data-tab="hero"]').click();renderHero();}
+
 function resetGame(){if(!confirm("確定清除進度並重來？建議先「匯出存檔」。"))return;localStorage.removeItem("island_save_v1");localStorage.removeItem("island21");localStorage.removeItem("island20v2");localStorage.removeItem("island20save");location.reload()}
 
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
- ["story","people","camp","map","skills"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!==b.dataset.tab});
+ ["story","people","camp","map","skills","hero"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!==b.dataset.tab});
  render();
 }));
 
@@ -911,7 +1016,7 @@ document.getElementById('choices').addEventListener('click', function(ev){
 
 
 // 掛到 window 供按鈕呼叫
-["note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
+["trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
   try{ if(typeof eval(name)==="function") window[name]=eval(name); }catch(e){}
 });
 
