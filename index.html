@@ -121,7 +121,11 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
  <div class="row" style="margin-top:6px"><span class="muted">群體信任</span><b id="group">50</b></div><div class="bar"><i id="groupBar" style="width:50%"></i></div>
  <div class="row" style="margin-top:6px"><span class="muted">收留</span><b id="teamCount">0</b></div>
  <hr>
- <div class="row"><h3>紀錄</h3><button class="ghost small" onclick="resetGame()">重來</button></div>
+ <div class="row"><h3>紀錄</h3><span style="display:flex;gap:4px;flex-wrap:wrap">
+<button class="ghost small" type="button" onclick="exportSave()">匯出存檔</button>
+<button class="ghost small" type="button" onclick="importSave()">匯入存檔</button>
+<button class="ghost small" type="button" onclick="resetGame()">重來</button>
+</span></div>
  <div class="log" id="log"></div>
 </aside>
 
@@ -153,16 +157,71 @@ let S={
 };
 
 const $=id=>document.getElementById(id);
-function save(){localStorage.setItem("island21",JSON.stringify(S))}
-function load(){try{const x=JSON.parse(localStorage.getItem("island21"));if(x){S=Object.assign(S,x);if(!S.favorGainToday)S.favorGainToday=Array(20).fill(0);if(!S.groupOf)S.groupOf=Array(20).fill("none");if(!S.pendingTask)S.pendingTask={};if(!S.campAssign)S.campAssign={}}}catch(e){}}
-function note(t){S.log.unshift(`第${S.day}天：${t}`);S.log=S.log.slice(0,50)}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
-
-function addFavor(i,n){
- const left=Math.max(0,12-(S.favorGainToday[i]||0));
- const gain=Math.min(left,n);
- if(gain<=0){note(women[i][0]+"今日好感已達上限。");return 0}
- S.aff[i]=Math.min(100,S.aff[i]+gain);S.favorGainToday[i]=(S.favorGainToday[i]||0)+gain;return gain;
+function save(){try{localStorage.setItem("island_save_v1",JSON.stringify(S));}catch(e){}}
+function normalizeSave(x){
+  if(!x||typeof x!=="object")return null;
+  const base={day:1,hp:100,stamina:80,food:3,water:3,hunger:25,shelter:1,clothes:1,fire:1,store:0,def:0,farm:0,group:50,zone:0,met:[],aff:Array(20).fill(0),trust:Array(20).fill(30),route:Array(20).fill("未選"),skills:[],team:[],pendingTask:{},taskDone:{},groupOf:Array(20).fill("none"),campAssign:{},favorGainToday:Array(20).fill(0),flags:{},log:[]};
+  const out=Object.assign({},base,x);
+  ["aff","trust","route","groupOf","favorGainToday"].forEach(k=>{
+    if(!Array.isArray(out[k])||out[k].length<20){
+      const arr=base[k].slice();
+      if(Array.isArray(out[k])) out[k].forEach((v,i)=>{if(i<20)arr[i]=v});
+      out[k]=arr;
+    }
+  });
+  if(!Array.isArray(out.met))out.met=[];
+  if(!Array.isArray(out.team))out.team=[];
+  if(!Array.isArray(out.skills))out.skills=[];
+  if(!out.pendingTask||typeof out.pendingTask!=="object")out.pendingTask={};
+  if(!out.taskDone||typeof out.taskDone!=="object")out.taskDone={};
+  if(!out.campAssign||typeof out.campAssign!=="object")out.campAssign={};
+  if(!out.flags||typeof out.flags!=="object")out.flags={};
+  if(!Array.isArray(out.log))out.log=[];
+  out.day=Math.max(1,+out.day||1);
+  out.zone=Math.max(0,Math.min(8,+out.zone||0));
+  return out;
+}
+function load(){
+  try{
+    let raw=localStorage.getItem("island_save_v1");
+    // 相容舊版存檔鍵，避免更新後變成重頭打
+    if(!raw) raw=localStorage.getItem("island21");
+    if(!raw) raw=localStorage.getItem("island20v2");
+    if(!raw) raw=localStorage.getItem("island20save");
+    if(!raw) return;
+    const x=JSON.parse(raw);
+    const n=normalizeSave(x);
+    if(n){ S=n; // 寫回新鍵
+      localStorage.setItem("island_save_v1",JSON.stringify(S));
+    }
+  }catch(e){console.warn("讀檔失敗",e)}
+}
+function exportSave(){
+  save();
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="island_save_day"+S.day+".json";
+  a.click();
+}
+function importSave(){
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=function(){
+    const f=inp.files&&inp.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=function(){
+      try{
+        const n=normalizeSave(JSON.parse(r.result));
+        if(!n){alert("存檔格式不正確");return}
+        S=n; save();
+        alert("存檔已匯入：第"+S.day+"天");
+        returnCamp();
+      }catch(e){alert("匯入失敗："+e.message)}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
 }
 
 function render(){
@@ -777,7 +836,7 @@ function frc(i){
  scene("強制｜"+women[i][0],`場景依目前探查區。強烈反抗、拉扯衣服、痛喘咒罵；插入後忽深忽淺。事後關係崩壞。`,[["返回",`openPerson(${i})`]],"強制");
 }
 
-function resetGame(){if(!confirm("重來？"))return;localStorage.removeItem("island21");location.reload()}
+function resetGame(){if(!confirm("確定清除進度並重來？建議先「匯出存檔」。"))return;localStorage.removeItem("island_save_v1");localStorage.removeItem("island21");localStorage.removeItem("island20v2");localStorage.removeItem("island20save");location.reload()}
 
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
