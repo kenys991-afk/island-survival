@@ -50,7 +50,7 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
 <header>
  <div class="eyebrow">ISLAND EXPLORATION · V2.1</div>
  <h1>荒島求生：全島探查</h1>
- <div class="sub">交替劇情・小團體・任務待辦・營區養成・好感每日上限</div>
+ <div class="sub">性愛主軸・求生交換・折服／不情願／強制・全島探查</div>
  <div class="topstats">
   <div class="stat"><small>天數</small><b id="day">第1天</b></div>
   <div class="stat"><small>生命</small><b id="hp">100</b></div>
@@ -153,7 +153,7 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
 
 <section class="panel wide">
  <h2>目前目標</h2>
- <div class="story" id="detailText">依序探查全島；交替推進人物線；任務可掛待辦。</div>
+ <div class="story" id="detailText">主軸：折服／不情願交換／強制。生存資源是佔有與妥協的籌碼。</div>
 </section>
 </main>
 <footer>V2.1｜全島主題・第3～7天交替・好感每日上限・小團體可換人</footer>
@@ -350,7 +350,7 @@ function returnCamp(){
   scene("營區・第"+S.day+"天",
 `你回到主營。火堆與棚架仍在。目前探查進度：${z}。
 
-收留 ${S.team.length} 人。任務可掛待辦，不強制完成。
+收留 ${S.team.length} 人。\n${survivalPressureText()}\n主軸入口：「以身體換生存」。
 飢餓 ${S.hunger}｜食物 ${S.food}｜飲水 ${S.water}｜體力 ${S.stamina}`,
   [
     ["繼續探查目前區域","exploreCurrent","primary"],
@@ -399,6 +399,8 @@ function startIntro(){
 `整座荒島的求生從海岸開始。
 
 二十名女性倖存者與你在殘骸附近陸續會合。傷的傷、哭的哭，有人已經在翻行李。
+
+很快她們會發現：淡水、食物與棚內一席之地，多半經過你的手。有人會被折服，有人會不情願地犧牲身體，只為活過下一夜。
 
 蘇晚晴與沈若蘭自然靠向傷患；蔡雅婷盯著林線；陳可兒盯著植物。小團體的雛形在混亂中出現。
 
@@ -889,14 +891,14 @@ function pickCampAssign(post){
 function up(type,st,fd){if(S.stamina<st||S.food<fd){alert("資源不足");return}S.stamina-=st;S.food-=fd;S[type]=Math.min(3,(S[type]||0)+1);note("升級"+type);render()}
 function restCamp(){S.stamina=Math.min(100,S.stamina+22);S.hunger=Math.min(100,S.hunger+8);S.hp=Math.min(100,S.hp+4);note("休息");render()}
 function vol(i){
- if(S.aff[i]<18){scene("不足",`好感尚低（${S.aff[i]}）。先對話或共同任務。`,[["返回",`openPerson(${i})`]]);return}
+ if(S.aff[i]<15){scene("不足",`好感不足（${S.aff[i]}）。先對話、交換或讓她更依賴資源。`,[["返回",`openPerson(${i})`]]);return}
  if(i===0){sex_su_full();return}
  if(i===2){sex_ruolan_full();return}
  if(i===4){sex_meilin_full();return}
  if(i===5){sex_xinyi_full();return}
  if(i===9){sex_yuzi_lagoon();return}
- S.route[i]="自願";addFavor(i,6);if(!S.skills.includes(i))S.skills.push(i);
- scene("自願｜"+women[i][0],`在當前探查區的隱蔽處自願靠近。長場景將按角色補完。\n解鎖：${women[i][4]}`,[["返回",`openPerson(${i})`]],"自願");
+ // 通用折服向（帶屬性細節）
+ sexYield(i);
 }
 function frc(i){
  if(!confirm("強制？關係與群體信任將重創。"))return;
@@ -984,6 +986,193 @@ function trainSexSub(sub){
 }
 function openHero(){document.querySelector('[data-tab="hero"]').click();renderHero();}
 
+
+
+/* ===== 屬性強烈影響性愛 ===== */
+function heroSexProfile(){
+  ensureHeroStats();
+  const sex=S.sex|0, str=S.str|0, charm=S.charm|0, lead=S.lead|0;
+  const sub=S.sexSub||{pace:0,fore:0,end:0};
+  return {
+    sex,str,charm,lead,
+    pace:sub.pace|0, fore:sub.fore|0, end:sub.end|0,
+    // 描述層級
+    skillTier: sex>=25?"高手": sex>=18?"熟練": sex>=12?"入門":"生疏",
+    powerTier: str>=22?"強橫": str>=15?"有力":"普通",
+    charmTier: charm>=22?"很會拿捏": charm>=15?"有吸引力":"平平",
+    leadTier: lead>=20?"她更難拒絕你的安排": lead>=14?"帶著命令感":"少有壓迫感"
+  };
+}
+function sexDetailByStats(mode){
+  // mode: yield | reluctant | force
+  const p=heroSexProfile();
+  const parts=[];
+  // 前戲
+  if(p.fore>=2) parts.push("你沒有急著插入，而是用指腹與唇先讓她身體誠實地發熱；前戲技巧讓她的呼吸先亂掉。");
+  else if(p.sex>=15) parts.push("你懂得先讓入口濕潤，再慢慢頂入。");
+  else parts.push("你進入得較直接，她吃痛地抽了一口氣。");
+  // 節奏
+  if(p.pace>=2 || p.sex>=20) parts.push("節奏完全由你掌控：忽淺忽深、忽快忽慢，她剛適應一種就被下一種拆開。");
+  else if(p.sex>=14) parts.push("你能變換深淺，但有時仍會亂了自己的呼吸。");
+  else parts.push("抽送較單調，多靠力道與深度。");
+  // 力量
+  if(mode!=="yield" && p.str>=18) parts.push("臂力與腰力讓她幾乎無法掙脫固定，每一次插入都又沉又實。");
+  else if(p.str>=15) parts.push("你扣住她的力度穩定，她退不了多遠。");
+  // 持久
+  if(p.end>=2 || p.sex>=22) parts.push("你能拉長過程，在她高潮邊緣反覆磨，不急著自己釋放。");
+  else if(p.sex<12) parts.push("你的持久有限，過程偏短，必須用深度彌補。");
+  // 魅力／領導對心理
+  if(mode==="yield"){
+    if(p.charm>=18) parts.push("她看你的眼神已有癮：恨自己不該要，卻更怕你不碰她。");
+    if(p.lead>=16) parts.push("你只要低聲說「自己張開」，她就會照做，像把判斷權交出去。");
+  }
+  if(mode==="reluctant"){
+    if(p.lead>=16) parts.push("你用分配權壓她：不配合就沒有明日的水。她的恥辱和求生欲扭在一起。");
+    if(p.charm>=18) parts.push("更糟的是她發現自己的身體在你技巧下竟然有反應，羞憤幾乎要溢出來。");
+  }
+  if(mode==="force"){
+    if(p.str>=20) parts.push("力量差距讓反抗只剩徒勞的抓痕與哭腔。");
+    if(p.sex>=18) parts.push("你甚至有餘裕控制她何時被頂到發顫，強制裡帶著殘忍的技術。");
+  }
+  parts.push("（目前性技巧"+p.sex+"／"+p.skillTier+"，力量"+p.str+"，魅力"+p.charm+"，領導"+p.lead+"）");
+  return parts.join("\n");
+}
+function psychLine(i, mode){
+  const name=women[i][0];
+  const job=women[i][2];
+  if(mode==="yield"){
+    return name+"（"+job+"）的心理：恐懼減了，取而代之的是依賴與自我厭棄交織——她清楚這島上離不開你，而身體已經會為你的插入發熱。";
+  }
+  if(mode==="reluctant"){
+    return name+"（"+job+"）的心理：每一秒都在計算「忍耐今晚，換明天的命」。快感若出現，只會讓她更恨自己。她把臉藏起來，是為了不讓你看見崩裂的表情。";
+  }
+  return name+"（"+job+"）的心理：憤怒、無力、恥辱。她把你記在恨意裡，但身體的記憶同樣被強行寫下。";
+}
+
+/* ===== 求生×身體：交換／不情願／折服 ===== */
+function survivalPressureText(){
+  const h=S.hunger|0, f=S.food|0, w=S.water|0;
+  let t="營區物資："+f+"食／"+w+"水，飢餓"+h+"。";
+  if(f<=2||w<=2||h>=50) t+=" 有人開始用身體換下一餐或一席遮風的地方。";
+  return t;
+}
+function listHungryWomen(){
+  // 已相遇且未強制崩壞者優先
+  return S.met.filter(i=>S.route[i]!=="強制"||S.aff[i]>-30).slice(0,8);
+}
+function openSurvivalSexMenu(){
+  const list=listHungryWomen();
+  if(!list.length){
+    scene("尚無對象","先推進劇情讓女性相遇，並讓物資吃緊，交換才會成立。",[["回營","returnCamp","primary"],["主線","continueMain"]]);
+    return;
+  }
+  const btns=list.map(i=>{
+    const w=women[i][0];
+    const tag=S.aff[i]>=40?"（可求歡／折服）":S.aff[i]>=15?"（猶豫）":"（更可能不情願交換）";
+    return [w+tag, "survivalApproach("+i+")"];
+  });
+  btns.push(["回營","returnCamp"]);
+  scene("以身體換生存",
+ survivalPressureText()+`
+
+在荒島上，食物、淡水、棚內一席之地都是籌碼。
+有人被折服後主動靠過來；有人咬牙不情願；有人只為今晚不被趕出去。
+
+點選對象：`,
+  btns, "求生交換", "性愛是主軸；生存壓力促成妥協與佔有。");
+}
+function survivalApproach(i){
+  meet(i);
+  const w=women[i][0];
+  const hungry = (S.food<=2||S.water<=2||S.hunger>=45);
+  const high = S.aff[i]>=40 && S.trust[i]>=25;
+  const mid = S.aff[i]>=18;
+  const lines = [];
+  lines.push("對象："+w+"｜好感"+S.aff[i]+"｜信任"+S.trust[i]);
+  lines.push(survivalPressureText());
+  lines.push("");
+  if(hungry) lines.push("她看了一眼存糧。喉嚨動了動——今晚若被拒絕，可能只能睡在風口。");
+  else lines.push("物資尚可，但棚內位置、傷藥與你的保護仍是稀缺品。");
+  const btns=[];
+  if(high){
+    btns.push(["折服後的自願（她已沉淪／依賴）", "sexYield("+i+")", "primary"]);
+  }
+  btns.push(["不情願的交換：用身體換食物或住處", "sexReluctant("+i+")", "primary"]);
+  btns.push(["強制佔有（強反抗・信任崩壞）", "frc("+i+")", "danger"]);
+  if(mid) btns.push(["只威脅、先不發生", "survivalThreat("+i+")"]);
+  btns.push(["離開", "openSurvivalSexMenu"]);
+  scene("接近｜"+w, lines.join("\n"), btns, "求生×性愛");
+}
+function sexYield(i){
+  S.route[i]="折服";
+  const bonus=typeof sexFavorBonus==="function"?sexFavorBonus():0;
+  addFavor(i, 7+bonus, true);
+  S.trust[i]=Math.min(100,(S.trust[i]|0)+5);
+  if(!S.skills.includes(i)) S.skills.push(i);
+  costSta(14);
+  note(women[i][0]+"折服交出身體。");
+  const detail=sexDetailByStats("yield");
+  const psych=psychLine(i,"yield");
+  scene("折服｜"+women[i][0],
+`場景：棚內隔出的窄鋪。外面有人夢囈，她必須咬著聲音。
+
+${psych}
+
+她沒有逃。衣帶被解开時手指發顫，卻自己把最後一層褪下。眼神濕，不是只因恐懼。
+你抵上入口，她低聲：「……進來。」
+
+插入的瞬間她仰頸，內壁又熱又緊。你抽出再送入，水聲很輕。她的氣音斷續：「嗯……哈啊……那裡……」。
+
+${detail}
+
+你忽而只留前端淺磨，忽而整根插入到底。她腿根發抖，腳趾蜷起，終於壓不住呻吟：「啊……不要只……淺……嗯啊……」。高潮時她痙攣著纏緊你，眼淚滑進髮際，像把殘餘的自尊心一併交出去。
+
+事後她貼著你的手臂，聲音啞：「別趕我走。我……會聽。」
+解鎖：${women[i][4]}（完整・折服）。屬性越高，她越容易沉淪於你的節奏。`,
+  [["再選一人","openSurvivalSexMenu","primary"],["回營","returnCamp"]], "折服");
+}
+function sexReluctant(i){
+  S.route[i]="不情願";
+  addFavor(i, 1);
+  S.trust[i]=Math.max(0,(S.trust[i]|0)-10);
+  S.group=Math.max(0,(S.group|0)-4);
+  if(!S.skills.includes(i)) S.skills.push(i);
+  costSta(16);
+  note(women[i][0]+"不情願以身體交換生存。");
+  const detail=sexDetailByStats("reluctant");
+  const psych=psychLine(i,"reluctant");
+  scene("不情願｜"+women[i][0],
+`場景：營火照不到的棚角。你把一份乾糧放在她視線裡，沒有立刻給。
+
+${psych}
+
+「……做完，那些是我的。」她說得咬牙。自己解衣，動作僵硬，膝蓋併得很緊。
+你分開她的腿時，她別過臉，呼吸卻已經亂了。
+
+插入時她痛哼一聲，手指抓皺防水布。「慢……必要的……就好……哈……」。你開始抽送，她把聲音全部悶進手臂，只有肢體在輕顫。
+
+${detail}
+
+你深頂時她溢出半聲哭腔；你改淺插，她反而因得不到結束而更難熬。身體逐漸濕潤，讓她羞憤地發抖——不是因為想要，是因為求生讓她無法拒絕你把她做到發軟。
+
+結束後她迅速穿衣，拿起物資，眼眶紅著：「這不是喜歡。是我還想活到明天。」
+能力：${women[i][4]}（基礎・交換）。你的領導與性技巧越高，她越難只把這當成「死板的交易」。`,
+  [["再選一人","openSurvivalSexMenu"],["威脅加深","survivalThreat("+i+")"],["回營","returnCamp","primary"]], "不情願");
+}
+function survivalThreat(i){
+  addFavor(i, -2);
+  S.trust[i]=Math.max(0,(S.trust[i]|0)-5);
+  note("你向"+women[i][0]+"暗示：沒有聽話，就沒有明天的份額。");
+  scene("威脅｜"+women[i][0],
+`你沒有立刻碰她，只是把存糧箱鎖上的聲音讓她聽見。
+
+「棚只留給有用的人。」
+
+她沉默很久。指甲掐進掌心。最後輕輕點頭，或轉身離開——但明天，她可能會自己回來。`,
+  [["進入交換","sexReluctant("+i+")","primary"],["強制","frc("+i+")","danger"],["回營","returnCamp"]], "壓力");
+}
+
+
 function resetGame(){if(!confirm("確定清除進度並重來？建議先「匯出存檔」。"))return;localStorage.removeItem("island_save_v1");localStorage.removeItem("island21");localStorage.removeItem("island20v2");localStorage.removeItem("island20save");location.reload()}
 
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
@@ -1001,7 +1190,7 @@ window.addEventListener("pagehide",function(){ try{save()}catch(e){} });
 
 
 // 掛到 window 供按鈕呼叫
-["trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
+["heroSexProfile","sexDetailByStats","psychLine","openSurvivalSexMenu","survivalApproach","sexYield","sexReluctant","survivalThreat","trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
   try{ if(typeof eval(name)==="function") window[name]=eval(name); }catch(e){}
 });
 
