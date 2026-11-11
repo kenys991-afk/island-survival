@@ -235,6 +235,27 @@ function scene(title,text,buttons,tag="主線",detail){
  ["story","people","camp","map","skills"].forEach(t=>{const el=$(t+"Tab");if(el)el.hidden=t!=="story"});
  render();
 }
+
+function returnCamp(){
+  const z=ZONES[Math.min(S.zone,ZONES.length-1)];
+  scene("營區・第"+S.day+"天",
+`你回到主營。火堆與棚架仍在。目前探查進度：${z}。
+
+收留 ${S.team.length} 人。任務可掛待辦，不強制完成。
+飢餓 ${S.hunger}｜食物 ${S.food}｜飲水 ${S.water}｜體力 ${S.stamina}`,
+  [
+    ["繼續探查目前區域","exploreCurrent","primary"],
+    ["下一天","nextDay"],
+    ["團隊合作／任務","openPeople()"],
+    ["營區培養","openCamp()"],
+    ["全島地圖","openMap()"],
+    ["與已相遇者對話（選人）","openPeople()"]
+  ],
+  "營區",
+  "在營區休整、指派待辦或繼續依序探查全島。"
+  );
+}
+
 function goStory(){document.querySelector('[data-tab="story"]').click()}
 function openPeople(){document.querySelector('[data-tab="people"]').click();render()}
 function openMap(){document.querySelector('[data-tab="map"]').click();render()}
@@ -353,7 +374,7 @@ function sex_ruolan_full(){
 
 事後她迅速整理衣褲，眼眶微紅：「……回去換藥。當沒發生。」
 解鎖：急救精通（完整向）。`,
-[["回營","goStory()","primary"],["角色頁","openPerson(2)"]],"自願・傷患區外");
+[["回營","returnCamp","primary"],["角色頁","openPerson(2)"]],"自願・傷患區外");
 }
 function force_ruolan_full(){
  meet(2); S.route[2]="強制"; S.aff[2]=Math.max(-100,S.aff[2]-50); S.trust[2]=0; S.group=Math.max(0,S.group-10);
@@ -385,7 +406,7 @@ function sex_meilin_full(){
 
 事後她蹲下撥了撥火炭，耳根通紅：「……粥，明天我仍會煮。」
 解鎖：生存料理（完整向）。`,
-[["回營","goStory()","primary"],["角色頁","openPerson(4)"]],"自願・灶旁");
+[["回營","returnCamp","primary"],["角色頁","openPerson(4)"]],"自願・灶旁");
 }
 function force_meilin_full(){
  meet(4); S.route[4]="強制"; S.aff[4]=Math.max(-100,S.aff[4]-48); S.trust[4]=0; S.group=Math.max(0,S.group-10);
@@ -417,7 +438,7 @@ function sex_xinyi_full(){
 
 事後她躺在草上喘：「……下次，換我在上面。」
 解鎖：耐力強化（完整向）。`,
-[["回營","goStory()","primary"],["角色頁","openPerson(5)"]],"自願・訓練空地");
+[["回營","returnCamp","primary"],["角色頁","openPerson(5)"]],"自願・訓練空地");
 }
 function force_xinyi_full(){
  meet(5); S.route[5]="強制"; S.aff[5]=Math.max(-100,S.aff[5]-50); S.trust[5]=0; S.group=Math.max(0,S.group-12);
@@ -690,13 +711,13 @@ function exploreCurrent(){
  costSta(10);gainFood(1);
  const z=ZONES[S.zone];
  scene("探查・"+z,`你在${z}活動。有新的足跡或資源線索。女性組員依小團體行動，不強制完成當日待辦。`,
- [["回營","goStory()"],["下一天","nextDay","primary"],["嘗試前進下一區","advanceZone()"]],"探查");
+ [["回營","returnCamp"],["下一天","nextDay","primary"],["嘗試前進下一區","advanceZone()"]],"探查");
 }
 function advanceZone(){
  const n=S.zone+1;
  if(n>=ZONES.length){alert("已達最深");return}
  if(S.day<ZONE_UNLOCK_DAY[n]){alert("約第"+ZONE_UNLOCK_DAY[n]+"天後較合適");return}
- S.zone=n;note("進入"+ZONES[n]);scene("前進・"+ZONES[n],`全島探查推進至：${ZONES[n]}。`,[["繼續探查","exploreCurrent","primary"],["回營","goStory()"]]);
+ S.zone=n;note("進入"+ZONES[n]);scene("前進・"+ZONES[n],`全島探查推進至：${ZONES[n]}。`,[["繼續探查","exploreCurrent","primary"],["回營","returnCamp"]]);
 }
 
 /* 角色／任務／營區 */
