@@ -315,7 +315,25 @@ function returnCamp(){
   );
 }
 
-function goStory(){document.querySelector('[data-tab="story"]').click()}
+function goStory(){
+  document.querySelector('[data-tab="story"]').click();
+  // 若只切分頁會像卡住，改為進入可操作的營區／主線樞紐
+  if(typeof returnCamp==="function") returnCamp();
+  else if(typeof startIntro==="function" && S.day<=1 && (!S.met||!S.met.length)) startIntro();
+}
+function continueMain(){
+  // 依天數接到主線，避免卡在角色頁
+  if(S.day<=1 && (!S.met || S.met.length===0)) { startIntro(); return; }
+  if(S.day<=1) { d1_camp(); return; }
+  if(S.day===2) { day2(); return; }
+  if(S.day===3) { day3(); return; }
+  if(S.day===4) { day4(); return; }
+  if(S.day===5) { day5(); return; }
+  if(S.day===6) { day6(); return; }
+  if(S.day===7) { day7(); return; }
+  if(S.day>=8) { day8(); return; }
+  returnCamp();
+}
 function openPeople(){document.querySelector('[data-tab="people"]').click();render()}
 function openMap(){document.querySelector('[data-tab="map"]').click();render()}
 function openCamp(){document.querySelector('[data-tab="camp"]').click();render()}
@@ -797,7 +815,7 @@ ${inT?"已收留":"未收留"}｜待辦：${S.pendingTask[i]||"無"}
   ["自願（需場景與好感）",`vol(${i})`],
   ["強制（當前場景推論）",`frc(${i})`,"danger"],
   ["返回",`openPeople()`]
- ]:[["未相遇・用劇情推進",`goStory()`,"primary"],["返回",`openPeople()`]],
+ ]:[["繼續主線劇情",`continueMain()`,"primary"],["回營區選單",`returnCamp()`],["返回團隊列表",`openPeople()`]],
  "團隊");
 }
 function talkP(i){const g=addFavor(i,5);S.trust[i]=Math.min(100,S.trust[i]+2);scene("對話｜"+women[i][0],`短暫交談。好感+${g}。關係只推一節，不一次結束。`,[["返回",`openPerson(${i})`]])}
