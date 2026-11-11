@@ -225,7 +225,10 @@ function renderSkills(){
 
 function scene(title,text,buttons,tag="主線",detail){
  $("sceneTitle").textContent=title;$("storyText").textContent=text;$("sceneTag").textContent=tag;
- $("choices").innerHTML=(buttons||[]).map((b,i)=>`<button class="${b[2]||(i===0?"primary":"")}" onclick="${b[1]}">${b[0]}</button>`).join("");
+ $("choices").innerHTML=(buttons||[]).map((b,i)=>{
+  const act=String(b[1]||'').replace(/"/g,'&quot;');
+  return `<button type="button" class="${b[2]||(i===0?"primary":"")}" data-act="${act}">${b[0]}</button>`;
+ }).join("");
  if(detail)$("detailText").textContent=detail;
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
  document.querySelector('[data-tab="story"]').classList.add("active");
@@ -761,9 +764,36 @@ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
  render();
 }));
 
+
+document.getElementById('choices').addEventListener('click', function(ev){
+  const btn = ev.target.closest('button[data-act]');
+  if(!btn) return;
+  ev.preventDefault();
+  let act = (btn.getAttribute('data-act')||'').trim();
+  if(!act) return;
+  try {
+    // 若只有函式名無括號，自動加上 ()
+    if(/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(act)) act = act + '()';
+    const fn = new Function(act);
+    fn();
+  } catch (err) {
+    console.error('按鈕執行失敗:', act, err);
+    alert('按鈕執行失敗: '+act+'\n'+err.message);
+  }
+});
+
 load();
-if(S.day<=1&&S.met.length===0)startIntro();
-else{render();scene("進度載入",`第${S.day}天｜區域：${ZONES[S.zone]}`,[["繼續","nextDay","primary"],["地圖","openMap()"],["團隊","openPeople()"],["從頭","resetGame()"]]);}
+try {
+  if(S.day<=1 && (!S.met || S.met.length===0)) startIntro();
+  else {
+    render();
+    scene("進度載入","第"+S.day+"天｜區域："+ZONES[Math.min(S.zone,ZONES.length-1)],[["繼續","nextDay()","primary"],["地圖","openMap()"],["團隊","openPeople()"],["從頭重來","resetGame()"]]);
+  }
+} catch (e) {
+  console.error(e);
+  document.getElementById("storyText").textContent = "初始化錯誤："+e.message;
+  document.getElementById("choices").innerHTML = '<button type="button" class="primary" data-act="resetGame()">清除進度並重來</button>';
+}
 </script>
 </body>
 </html>
