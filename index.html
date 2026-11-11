@@ -81,8 +81,8 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
   <p class="muted small">依劇情分為醫療／採集／警戒／工程等小組，組員隨劇情變動。好感每天對同一人最多+12。</p>
   <div id="groupPanels"></div>
   <div class="actions">
-   <button class="primary" onclick="assignPendingTasks()">批次分配「待完成」任務</button>
-   <button onclick="clearFinishedTasks()">清除已完成任務標記</button>
+   <button class="primary" type="button" data-act="assignPendingTasks">批次分配「待完成」任務</button>
+   <button type="button" data-act="clearFinishedTasks">清除已完成任務標記</button>
   </div>
   <hr>
   <h3>全員列表</h3>
@@ -95,8 +95,8 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
   <p class="muted small">可把收留者分配到養成崗位（非強制）。升級仍需物資與體力。</p>
   <div class="camp-grid" id="campGrid"></div>
   <div class="actions" style="margin-top:10px">
-   <button class="primary" onclick="restCamp()">休息（體力+・飢餓+）</button>
-   <button onclick="goStory()">回劇情</button>
+   <button class="primary" type="button" data-act="restCamp">休息（體力+・飢餓+）</button>
+   <button type="button" data-act="goStory">回劇情</button>
   </div>
  </div>
 
@@ -144,9 +144,9 @@ footer{text-align:center;color:#81958a;font-size:10px;padding:14px}
  <hr>
  <div class="small muted" id="autoSaveHint" style="margin-bottom:8px">進入遊戲後會自動存檔</div>
  <div class="row"><h3>紀錄</h3><span style="display:flex;gap:4px;flex-wrap:wrap">
-<button class="ghost small" type="button" onclick="exportSave()">匯出存檔</button>
-<button class="ghost small" type="button" onclick="importSave()">匯入存檔</button>
-<button class="ghost small" type="button" onclick="resetGame()">重來</button>
+<button class="ghost small" type="button" type="button" data-act="exportSave">匯出存檔</button>
+<button class="ghost small" type="button" type="button" data-act="importSave">匯入存檔</button>
+<button class="ghost small" type="button" type="button" data-act="resetGame">重來</button>
 </span></div>
  <div class="log" id="log"></div>
 </aside>
@@ -290,7 +290,7 @@ function render(){
 function renderPeople(){
  $("peopleGrid").innerHTML=women.map((w,i)=>{
   const met=S.met.includes(i),inT=S.team.includes(i);
-  return `<button class="person" onclick="openPerson(${i})"><b>${String(i+1).padStart(2,"0")}｜${w[0]}</b>
+  return `<button type="button" class="person" data-act="openPerson(${i})"><b>${String(i+1).padStart(2,"0")}｜${w[0]}</b>
   <span>${w[2]}・${GROUPS[S.groupOf[i]]||"未分組"}</span><div>
   ${met?'<span class="pill">已遇</span>':'<span class="pill warn">未遇</span>'}
   ${inT?'<span class="pill ok">收留</span>':''}
@@ -306,7 +306,7 @@ function renderGroups(){
   if(g==="none"&&!members.length)return "";
   return `<div class="group-box"><h3>${GROUPS[g]}（${members.length}）</h3>
   <div class="small muted">${members.length?members.map(i=>women[i][0]+(S.team.includes(i)?"":"·未收留")).join("、"):"尚無"}</div>
-  <div class="actions" style="margin-top:6px">${members.slice(0,4).map(i=>`<button class="ghost small" onclick="openPerson(${i})">${women[i][0]}</button>`).join("")}</div></div>`;
+  <div class="actions" style="margin-top:6px">${members.slice(0,4).map(i=>`<button class="ghost small" data-act="openPerson(${i})">${women[i][0]}</button>`).join("")}</div></div>`;
  }).join("");
 }
 function renderCamp(){
@@ -314,19 +314,19 @@ function renderCamp(){
  $("campGrid").innerHTML=posts.map(p=>{
   const who=Object.keys(S.campAssign).filter(i=>S.campAssign[i]===p).map(i=>women[i][0]);
   return `<div class="camp-card"><b>${CAMP_POSTS[p]}</b><div class="small muted">${who.length?who.join("、"):"無人"}</div>
-  <button style="width:100%;margin-top:6px" onclick="pickCampAssign('${p}')">分配收留者</button></div>`;
+  <button style="width:100%;margin-top:6px" data-act="pickCampAssign('${p}')">分配收留者</button></div>`;
  }).join("")+`<div class="camp-card"><b>硬體升級</b>
-  <button style="width:100%;margin-top:4px" onclick="up('shelter',15,1)">住所（體15食1）</button>
-  <button style="width:100%;margin-top:4px" onclick="up('fire',12,0)">灶火（體12）</button>
-  <button style="width:100%;margin-top:4px" onclick="up('farm',20,0)">田圃（體20）</button></div>`;
+  <button style="width:100%;margin-top:4px" data-act="up('shelter',15,1)">住所（體15食1）</button>
+  <button style="width:100%;margin-top:4px" data-act="up('fire',12,0)">灶火（體12）</button>
+  <button style="width:100%;margin-top:4px" data-act="up('farm',20,0)">田圃（體20）</button></div>`;
 }
 function renderMap(){
  $("mapStatus").innerHTML=ZONES.map((z,i)=>`${i<=S.zone?"✓":"○"} ${z}${S.day>=ZONE_UNLOCK_DAY[i]?"":"（約第"+ZONE_UNLOCK_DAY[i]+"天）"}`).join("<br>");
  const next=S.zone+1;
  $("mapActions").innerHTML=`
-  <button class="primary" onclick="exploreCurrent()">探查目前區域：${ZONES[S.zone]}</button>
-  ${next<ZONES.length&&S.day>=ZONE_UNLOCK_DAY[next]?`<button onclick="advanceZone()">前進下一區：${ZONES[next]}</button>`:`<button disabled>下一區尚未開放</button>`}
-  <button onclick="goStory()">回劇情</button>`;
+  <button type="button" class="primary" data-act="exploreCurrent">探查目前區域：${ZONES[S.zone]}</button>
+  ${next<ZONES.length&&S.day>=ZONE_UNLOCK_DAY[next]?`<button type="button" data-act="advanceZone">前進下一區：${ZONES[next]}</button>`:`<button disabled>下一區尚未開放</button>`}
+  <button type="button" data-act="goStory">回劇情</button>`;
 }
 function renderSkills(){
  $("skillList").innerHTML=S.skills.length?S.skills.map(i=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${women[i][0]}｜${women[i][4]}</span><span class="pill">${S.route[i]}</span></div>`).join(""):'<p class="muted">尚未解鎖</p>';
@@ -997,28 +997,76 @@ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
 window.addEventListener("visibilitychange",function(){ if(document.visibilityState==="hidden") try{save()}catch(e){} });
 window.addEventListener("pagehide",function(){ try{save()}catch(e){} });
 
-document.getElementById('choices').addEventListener('click', function(ev){
-  const btn = ev.target.closest('button[data-act]');
-  if(!btn) return;
-  ev.preventDefault();
-  let act = (btn.getAttribute('data-act')||'').trim();
-  if(!act) return;
-  try {
-    if(/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(act)) act = act + '()';
-    // 使用 window 作用域，避免找不到函式
-    const fn = new Function('with(window){ '+act+' }');
-    fn();
-  } catch (err) {
-    console.error('按鈕執行失敗:', act, err);
-    alert('按鈕執行失敗: '+act+'\n'+err.message);
-  }
-});
+/* old choices listener removed */
 
 
 // 掛到 window 供按鈕呼叫
 ["trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
   try{ if(typeof eval(name)==="function") window[name]=eval(name); }catch(e){}
 });
+
+
+// ===== 全域按鈕（所有 data-act）=====
+function runAct(act){
+  act = String(act||"").trim();
+  if(!act) return;
+  try{
+    if(/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(act)){
+      var f = window[act];
+      if(typeof f === "function"){ f(); return; }
+      throw new Error("找不到函式: "+act);
+    }
+    // 支援 trainHero('str')、openPerson(1) 等
+    var m = act.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$/);
+    if(m){
+      var fn = window[m[1]];
+      if(typeof fn !== "function") throw new Error("找不到函式: "+m[1]);
+      var args = [];
+      if(m[2].trim()!==""){
+        // 簡單參數：數字、字串
+        args = m[2].split(",").map(function(a){
+          a=a.trim();
+          if((a[0]==="'"&&a.slice(-1)==="'")||(a[0]==='"'&&a.slice(-1)==='"')) return a.slice(1,-1);
+          if(!isNaN(Number(a))) return Number(a);
+          if(a==="true") return true;
+          if(a==="false") return false;
+          return a;
+        });
+      }
+      fn.apply(null, args);
+      return;
+    }
+    throw new Error("無法解析: "+act);
+  }catch(err){
+    console.error(err);
+    alert("按鈕失敗: "+act+"\n"+err.message);
+  }
+}
+document.addEventListener("click", function(ev){
+  var btn = ev.target.closest("[data-act]");
+  if(!btn) return;
+  ev.preventDefault();
+  runAct(btn.getAttribute("data-act"));
+}, false);
+
+// 分頁切換（不依賴 inline 以外的邏輯失效）
+document.addEventListener("click", function(ev){
+  var tab = ev.target.closest(".tab[data-tab]");
+  if(!tab) return;
+  var name = tab.getAttribute("data-tab");
+  document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
+  tab.classList.add("active");
+  ["story","people","camp","map","skills","hero"].forEach(function(t){
+    var el = document.getElementById(t+"Tab");
+    if(el) el.hidden = (t!==name);
+  });
+  if(name==="people" && typeof renderPeople==="function") renderPeople();
+  if(name==="camp" && typeof render==="function") render();
+  if(name==="map" && typeof renderMap==="function") renderMap();
+  if(name==="skills" && typeof renderSkills==="function") renderSkills();
+  if(name==="hero" && typeof renderHero==="function") renderHero();
+}, false);
+
 
 load();
 try {
