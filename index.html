@@ -891,26 +891,13 @@ function pickCampAssign(post){
 function up(type,st,fd){if(S.stamina<st||S.food<fd){alert("資源不足");return}S.stamina-=st;S.food-=fd;S[type]=Math.min(3,(S[type]||0)+1);note("升級"+type);render()}
 function restCamp(){S.stamina=Math.min(100,S.stamina+22);S.hunger=Math.min(100,S.hunger+8);S.hp=Math.min(100,S.hp+4);note("休息");render()}
 function vol(i){
- if(S.aff[i]<15){scene("不足",`好感不足（${S.aff[i]}）。先對話、交換或讓她更依賴資源。`,[["返回",`openPerson(${i})`]]);return}
- if(i===0){sex_su_full();return}
- if(i===2){sex_ruolan_full();return}
- if(i===4){sex_meilin_full();return}
- if(i===5){sex_xinyi_full();return}
- if(i===9){sex_yuzi_lagoon();return}
- // 通用折服向（帶屬性細節）
- sexYield(i);
+ if(S.aff[i]<12){scene("不足",`好感不足（${S.aff[i]}）。`,[["返回",`openPerson(${i})`]]);return}
+ // 專屬長劇可保留入口；此處統一進入手動選擇流程
+ sexChoiceState(i,"voluntary");
 }
 function frc(i){
- if(!confirm("強制？關係與群體信任將重創。"))return;
- if(i===0){force_su_full();return}
- if(i===2){force_ruolan_full();return}
- if(i===4){force_meilin_full();return}
- if(i===5){force_xinyi_full();return}
- if(i===3){force_yahan_forest();return}
- if(i===6){force_yating_high();return}
- if(i===9){force_yuzi_lagoon();return}
- S.route[i]="強制";S.aff[i]=Math.max(-100,S.aff[i]-50);S.trust[i]=0;S.group=Math.max(0,S.group-8);if(!S.skills.includes(i))S.skills.push(i);
- scene("強制｜"+women[i][0],`場景依目前探查區。強烈反抗、拉扯衣服、痛喘咒罵；插入後忽深忽淺。事後關係崩壞。`,[["返回",`openPerson(${i})`]],"強制");
+ if(!confirm("強制？將重創好感與群體信任。"))return;
+ sexChoiceState(i,"force");
 }
 
 
@@ -1049,6 +1036,175 @@ function psychLine(i, mode){
   return name+"（"+job+"）的心理：憤怒、無力、恥辱。她把你記在恨意裡，但身體的記憶同樣被強行寫下。";
 }
 
+
+/* ===== 自願／不情願／強制：逐步選擇 ===== */
+var SEX_POS = [
+  ["正常位","她仰躺，雙腿被分開，躲不開視線"],
+  ["後入","她趴跪，腰被扣住，只能承受從後而來的插入"],
+  ["騎乘","被你拉著腰往下坐，逃不開深度"],
+  ["側躺","從身後抱緊固定，插入密而深"],
+  ["站立抵壁","抵在柱或岩壁上，腿軟也站不穩"]
+];
+var SEX_THRUST = [
+  ["慢而深","整根送到最裡，重磨"],
+  ["淺而快","在入口密集戳刺"],
+  ["忽深忽淺","節奏亂掉，完全跟不上"],
+  ["重頂連插","撞擊又沉又密，肉體聲清楚"]
+];
+var SEX_CUM = [
+  ["體內","灌在最深處"],
+  ["小腹／股間","抽出來射在腿根與小腹"],
+  ["胸部","射在乳溝與乳尖"],
+  ["口中","抵著唇舌釋放"],
+  ["体外","射在布面或她腿邊"]
+];
+function sexChoiceState(i, mode){
+  window._sex = {i:i, mode:mode||"voluntary", style:null, tease:[], rough:[], pos:null, thrust:null, cum:null};
+  sexChooseStyle();
+}
+function sexModeTitle(){
+  var m=window._sex.mode;
+  if(m==="force") return "強制";
+  if(m==="reluctant") return "不情願";
+  if(m==="yield") return "折服";
+  return "自願";
+}
+function sexChooseStyle(){
+  var w=women[window._sex.i][0];
+  var mode=window._sex.mode;
+  var btns;
+  if(mode==="force"||mode==="reluctant"){
+    btns=[
+      ["粗暴急色：直接扯衣","sexSetStyle('粗暴')","primary"],
+      ["冷硬控制：少話、用動作壓她","sexSetStyle('冷硬')"],
+      ["情緒亢奮：呼吸亂、動作急、停不下來","sexSetStyle('亢奮')","primary"]
+    ];
+  } else {
+    btns=[
+      ["溫柔","sexSetStyle('溫柔')","primary"],
+      ["猴急","sexSetStyle('猴急')"]
+    ];
+  }
+  btns.push(["取消","returnCamp"]);
+  scene(sexModeTitle()+"｜方式｜"+w, "先決定你的方式：", btns, sexModeTitle()+"選項");
+}
+function sexSetStyle(s){ window._sex.style=s; sexChooseTease(); }
+function sexChooseTease(){
+  var w=women[window._sex.i][0];
+  var mode=window._sex.mode;
+  var t=window._sex.tease;
+  var r=window._sex.rough;
+  var extra="";
+  if(t.length||r.length) extra="已選："+t.concat(r).join("、")+"\n\n";
+  var btns=[
+    ["胸部（揉、掐、舔）","sexAddTease('胸部')","primary"],
+    ["口交","sexAddTease('口交')"]
+  ];
+  if(mode==="force"||mode==="reluctant"){
+    btns.push(["撕扯內衣褲","sexAddRough('撕扯內衣褲')","primary"]);
+    btns.push(["手指粗暴（扣、擴）","sexAddRough('手指粗暴')"]);
+    btns.push(["情緒亢奮（喘、急、停不下來）","sexAddRough('情緒亢奮')"]);
+  }
+  btns.push(["進入體位","sexChoosePos","primary"]);
+  scene(sexModeTitle()+"｜前戲／對待｜"+w, extra+"方式："+window._sex.style+"\n可多選，選完點「進入體位」。", btns, sexModeTitle()+"選項");
+}
+function sexAddTease(x){ if(window._sex.tease.indexOf(x)<0) window._sex.tease.push(x); sexChooseTease(); }
+function sexAddRough(x){ if(window._sex.rough.indexOf(x)<0) window._sex.rough.push(x); sexChooseTease(); }
+function sexChoosePos(){
+  var w=women[window._sex.i][0];
+  var btns=SEX_POS.map(function(p,idx){ return [p[0]+"： "+p[1], "sexSetPos("+idx+")", idx===0?"primary":""]; });
+  btns.push(["返回上一步","sexChooseTease"]);
+  scene(sexModeTitle()+"｜體位｜"+w, "選體位：", btns, sexModeTitle()+"選項");
+}
+function sexSetPos(idx){ window._sex.pos=idx; sexChooseThrust(); }
+function sexChooseThrust(){
+  var w=women[window._sex.i][0];
+  var btns=SEX_THRUST.map(function(p,idx){ return [p[0]+"： "+p[1], "sexSetThrust("+idx+")", idx===0?"primary":""]; });
+  scene(sexModeTitle()+"｜抽插｜"+w, "體位："+SEX_POS[window._sex.pos][0]+"\n選抽插：", btns, sexModeTitle()+"選項");
+}
+function sexSetThrust(idx){ window._sex.thrust=idx; sexChooseCum(); }
+function sexChooseCum(){
+  var w=women[window._sex.i][0];
+  var btns=SEX_CUM.map(function(p,idx){ return [p[0]+"： "+p[1], "sexSetCum("+idx+")", idx===0?"primary":""]; });
+  scene(sexModeTitle()+"｜射精｜"+w, "射在哪裡？", btns, sexModeTitle()+"選項");
+}
+function sexSetCum(idx){ window._sex.cum=idx; sexPlayResolve(); }
+function sexPlayResolve(){
+  var i=window._sex.i, w=women[i][0], mode=window._sex.mode;
+  var style=window._sex.style;
+  var tease=window._sex.tease||[];
+  var rough=window._sex.rough||[];
+  var pos=SEX_POS[window._sex.pos];
+  var thr=SEX_THRUST[window._sex.thrust];
+  var cum=SEX_CUM[window._sex.cum];
+  var p=typeof heroSexProfile==="function"?heroSexProfile():{sex:10,str:10,charm:10,skillTier:"入門"};
+  var bonus=typeof sexFavorBonus==="function"?sexFavorBonus():0;
+  if(mode==="force"){
+    S.route[i]="強制"; S.aff[i]=Math.max(-100,(S.aff[i]|0)-45); S.trust[i]=0; S.group=Math.max(0,(S.group|0)-10); costSta(18);
+  } else if(mode==="reluctant"){
+    S.route[i]="不情願"; addFavor(i,1); S.trust[i]=Math.max(0,(S.trust[i]|0)-10); S.group=Math.max(0,(S.group|0)-4); costSta(16);
+  } else {
+    S.route[i]=mode==="yield"?"折服":"自願";
+    addFavor(i,6+bonus+(style==="溫柔"?1:0), true);
+    S.trust[i]=Math.min(100,(S.trust[i]|0)+(style==="溫柔"?6:2));
+    costSta(style==="猴急"?12:15);
+  }
+  if(!S.skills.includes(i)) S.skills.push(i);
+  note(w+"・"+sexModeTitle()+"（"+style+"／"+pos[0]+"／"+cum[0]+"）");
+  var L=[];
+  L.push("【"+sexModeTitle()+"】"+w+"｜方式："+style+"｜體位："+pos[0]+"｜抽插："+thr[0]+"｜射精："+cum[0]);
+  L.push("");
+  if(mode==="force"){
+    L.push("她掙扎、咒罵、想推開你。");
+    if(style==="亢奮") L.push("你情緒亢奮：下手更急，低喘，停不下來。");
+    if(style==="粗暴") L.push("你幾乎不給她喘息，動作又快又硬。");
+    if(style==="冷硬") L.push("你少話，只用力道把她按進角度。");
+  } else if(mode==="reluctant"){
+    L.push("她為了物資或住處沒有真的逃走，身體卻是僵的。");
+    if(style==="亢奮") L.push("你的亢奮讓她更不安——這不像例行交換，你是想把她做透。");
+    if(style==="粗暴") L.push("交易變成單方面索取，她咬牙承受。");
+  } else {
+    if(style==="溫柔") L.push("你吻她，慢慢解开衣服，她沒躲。");
+    else L.push("你猴急地扯開衣帶，她驚喘，卻沒有真正推開。");
+  }
+  if(rough.indexOf("撕扯內衣褲")>=0){
+    L.push("布料被扯出細響，內衣肩帶崩開，底褲被拽到膝彎甚至撕破；她下意識去抓，被你按住手腕。");
+  }
+  if(rough.indexOf("手指粗暴")>=0){
+    L.push("手指不講究輕柔：直接扣進、分開、擴張。她痛得抽氣，腿根發顫：「啊……太粗暴……嗯……」。");
+    if(p.sex>=16) L.push("技巧仍讓刺激準確壓上敏感處，她恨自己漏出的聲音。");
+  }
+  if(rough.indexOf("情緒亢奮")>=0 || style==="亢奮"){
+    L.push("你的呼吸很重，動作一下比一下急。她被這種亢奮嚇到，也被迫跟著失控。");
+  }
+  if(tease.indexOf("胸部")>=0) L.push("你揉、掐、含住乳尖。她溢出又痛又麻的哼聲。");
+  if(tease.indexOf("口交")>=0){
+    if(mode==="force") L.push("你強迫她張嘴。抗議含糊不清，喉間嗚咽。");
+    else L.push("唇舌與溫度交換。她羞憤或沉溺，嘴角發亮。");
+  }
+  L.push("");
+  L.push("【插入】"+pos[1]+"。整根插入，內壁緊絞，聲音碎掉。");
+  L.push("【抽插】"+thr[1]+"。水聲、撞擊、呻吟疊在一起。");
+  if(p.str>=18) L.push("力量讓她退不了，每一次又沉又實。");
+  if(p.sex>=18) L.push("性技巧讓你在粗暴裡仍打在她最受不了的點上。");
+  L.push("她腳趾蜷起，抓布或抓你：「嗯啊……哈啊……」。");
+  L.push("");
+  L.push("【射精・"+cum[0]+"】"+cum[1]+"。");
+  if(cum[0]==="體內") L.push("熱度灌入最深，小腹輕顫，像被標記。");
+  if(cum[0]==="口中") L.push("她被迫承受氣味與溫度，眼角發紅。");
+  if(cum[0]==="胸部") L.push("白濁掛在乳尖，她低頭看見自己的樣子。");
+  L.push("");
+  if(typeof psychLine==="function") L.push(psychLine(i, mode==="force"?"force": mode==="reluctant"?"reluctant":"yield"));
+  if(mode==="force") L.push("事後關係重創。能力："+women[i][4]+"（基礎）。");
+  else if(mode==="reluctant") L.push("她拿起物資，幾乎不看你。能力："+women[i][4]+"（基礎・交換）。");
+  else L.push("解鎖："+women[i][4]+"（完整）。");
+  scene(sexModeTitle()+"・完成｜"+w, L.join("\n"), [
+    ["同一人再選一次","sexChoiceState("+i+",'"+mode+"')"],
+    ["換人／清單","openSurvivalSexMenu","primary"],
+    ["回營","returnCamp"]
+  ], sexModeTitle());
+}
+
 /* ===== 求生×身體：交換／不情願／折服 ===== */
 function survivalPressureText(){
   const h=S.hunger|0, f=S.food|0, w=S.water|0;
@@ -1104,60 +1260,11 @@ function survivalApproach(i){
   scene("接近｜"+w, lines.join("\n"), btns, "求生×性愛");
 }
 function sexYield(i){
-  S.route[i]="折服";
-  const bonus=typeof sexFavorBonus==="function"?sexFavorBonus():0;
-  addFavor(i, 7+bonus, true);
-  S.trust[i]=Math.min(100,(S.trust[i]|0)+5);
-  if(!S.skills.includes(i)) S.skills.push(i);
-  costSta(14);
-  note(women[i][0]+"折服交出身體。");
-  const detail=sexDetailByStats("yield");
-  const psych=psychLine(i,"yield");
-  scene("折服｜"+women[i][0],
-`場景：棚內隔出的窄鋪。外面有人夢囈，她必須咬著聲音。
-
-${psych}
-
-她沒有逃。衣帶被解开時手指發顫，卻自己把最後一層褪下。眼神濕，不是只因恐懼。
-你抵上入口，她低聲：「……進來。」
-
-插入的瞬間她仰頸，內壁又熱又緊。你抽出再送入，水聲很輕。她的氣音斷續：「嗯……哈啊……那裡……」。
-
-${detail}
-
-你忽而只留前端淺磨，忽而整根插入到底。她腿根發抖，腳趾蜷起，終於壓不住呻吟：「啊……不要只……淺……嗯啊……」。高潮時她痙攣著纏緊你，眼淚滑進髮際，像把殘餘的自尊心一併交出去。
-
-事後她貼著你的手臂，聲音啞：「別趕我走。我……會聽。」
-解鎖：${women[i][4]}（完整・折服）。屬性越高，她越容易沉淪於你的節奏。`,
-  [["再選一人","openSurvivalSexMenu","primary"],["回營","returnCamp"]], "折服");
+  if(S.aff[i]<12){scene("還不夠折服","她仍在猶豫。先交換、對話或再施壓。",[["返回","survivalApproach("+i+")"]]);return;}
+  sexChoiceState(i,"yield");
 }
 function sexReluctant(i){
-  S.route[i]="不情願";
-  addFavor(i, 1);
-  S.trust[i]=Math.max(0,(S.trust[i]|0)-10);
-  S.group=Math.max(0,(S.group|0)-4);
-  if(!S.skills.includes(i)) S.skills.push(i);
-  costSta(16);
-  note(women[i][0]+"不情願以身體交換生存。");
-  const detail=sexDetailByStats("reluctant");
-  const psych=psychLine(i,"reluctant");
-  scene("不情願｜"+women[i][0],
-`場景：營火照不到的棚角。你把一份乾糧放在她視線裡，沒有立刻給。
-
-${psych}
-
-「……做完，那些是我的。」她說得咬牙。自己解衣，動作僵硬，膝蓋併得很緊。
-你分開她的腿時，她別過臉，呼吸卻已經亂了。
-
-插入時她痛哼一聲，手指抓皺防水布。「慢……必要的……就好……哈……」。你開始抽送，她把聲音全部悶進手臂，只有肢體在輕顫。
-
-${detail}
-
-你深頂時她溢出半聲哭腔；你改淺插，她反而因得不到結束而更難熬。身體逐漸濕潤，讓她羞憤地發抖——不是因為想要，是因為求生讓她無法拒絕你把她做到發軟。
-
-結束後她迅速穿衣，拿起物資，眼眶紅著：「這不是喜歡。是我還想活到明天。」
-能力：${women[i][4]}（基礎・交換）。你的領導與性技巧越高，她越難只把這當成「死板的交易」。`,
-  [["再選一人","openSurvivalSexMenu"],["威脅加深","survivalThreat("+i+")"],["回營","returnCamp","primary"]], "不情願");
+  sexChoiceState(i,"reluctant");
 }
 function survivalThreat(i){
   addFavor(i, -2);
@@ -1190,7 +1297,7 @@ window.addEventListener("pagehide",function(){ try{save()}catch(e){} });
 
 
 // 掛到 window 供按鈕呼叫
-["heroSexProfile","sexDetailByStats","psychLine","openSurvivalSexMenu","survivalApproach","sexYield","sexReluctant","survivalThreat","trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
+["sexAddRough","sexModeTitle","sexChoiceState","sexSetStyle","sexAddTease","sexChooseStyle","sexChooseTease","sexChoosePos","sexSetPos","sexChooseThrust","sexSetThrust","sexChooseCum","sexSetCum","sexPlayResolve","heroSexProfile","sexDetailByStats","psychLine","openSurvivalSexMenu","survivalApproach","sexYield","sexReluctant","survivalThreat","trainHero","trainSexSub","renderHero","openHero","ensureHeroStats","sexFavorBonus","note","esc","addFavor","costSta","gainFood","save","load","render","scene","startIntro","returnCamp","continueMain","goStory","openPeople","openMap","openCamp","openPerson","nextDay","exploreCurrent","advanceZone","day2","day3","day4","day5","day6","day7","day8","d1_groups","d1_search","d1_med","d1_camp","talk_su_beach","sex_su_full","force_su_full","sex_ruolan_full","force_ruolan_full","sex_meilin_full","force_meilin_full","sex_xinyi_full","force_xinyi_full","resetGame","exportSave","importSave","join","kick","pend","setG","talkP","vol","frc","assignPendingTasks","clearFinishedTasks","pickCampAssign","up","restCamp","d2_reef","d3_forest","d3_shelter_ya","force_yahan_forest","d3_camp_talk","d3_meilin","d4_water","d4_shelter2","d5_post","d5_guard_talk","d5_agree","force_yating_high","d6_water","d6_yuzi","d6_task","sex_yuzi_lagoon","force_yuzi_lagoon","d7_cave","d7_task","d7_alin","d7_end"].forEach(function(name){
   try{ if(typeof eval(name)==="function") window[name]=eval(name); }catch(e){}
 });
 
